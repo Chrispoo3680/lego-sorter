@@ -1,11 +1,54 @@
 {
-    "basics": {},
-    "wall": {},
-    "snot": {},
-    "angle": {},
-    "curve": {},
-    "articulation": {},
-    "clip": {},
+    "basics": {
+        "brick": {},
+        "plate": {},
+        "tile": {}
+    },
+    "wall": {
+        "windowAndDoor": [],
+        "fence": [],
+        "decorative": [],
+        "stairs": [],
+        "panel": []
+    },
+    "snot": {
+        "brick": [],
+        "bracket": [],
+        "jumper": []
+    },
+    "angle": {
+        "slope": {},
+        "windscreen": {},
+        "wedge": {}
+    },
+    "curve": {
+        "curvedBrick": {},
+        "curvedPlate": {},
+        "curvedTile": {},
+        "cylinder": {},
+        "cone": {},
+        "dishAndDome": {},
+        "curved": {},
+        "archAndBow": {},
+        "wedge": {},
+        "mudguard": {},
+        "otherCurvedParts": {}
+    },
+    "articulation": {
+        "hinge": {},
+        "joint": {},
+        "clickSocket": [],
+        "rockAndGroove": [],
+        "flexible": []
+    },
+    "clip": {
+        "bar": {},
+        "clip": {},
+        "handle": {},
+        "flag": {},
+        "door": {},
+        "ladderAndRailing": {}
+    },
     "minifig": {},
     "nature": {},
     "viechle": {},
