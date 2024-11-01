@@ -13,3 +13,4 @@ mlxtend
 kaggle
 pyyaml
 rebrick
+pillow
