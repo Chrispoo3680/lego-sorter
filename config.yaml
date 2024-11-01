@@ -2,7 +2,7 @@
 datalink: "https://www.kaggle.com/api/v1/datasets/download/ronanpickell/b200c-lego-classification-dataset"
 datahandle: "ronanpickell/b200c-lego-classification-dataset"
 dataname: b200c-lego-classification-dataset
-datairectory: data/
+datadirectory: data/
 
 # MODELS
 modelpath: models/model.pkl
