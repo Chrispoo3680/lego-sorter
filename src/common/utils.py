@@ -3,6 +3,7 @@ Contains various utility functions for PyTorch model training and saving.
 """
 
 import torch
+import os
 from pathlib import Path
 
 
@@ -15,7 +16,14 @@ def save_model(model: torch.nn.Module, target_dir: str, model_name: str):
     # Create model save path
     assert model_name.endswith(".pth") or model_name.endswith(".pt")
 
-    model_save_path: Path = target_dir_path / model_name
+    # Checks if there are already files with the same name in target directory
+    files_in_dir: list[str] = os.listdir(target_dir_path)
+    version = str(sum([1 for file in files_in_dir if model_name in file]))
+
+    file_name, file_type = model_name.split(".")
+    save_name: str = f"{file_name}V{version}.{file_type}"
+
+    model_save_path: Path = target_dir_path / save_name
 
     # Save the model state_dict()
     print(f"[INFO] Saving model to: {model_save_path}")

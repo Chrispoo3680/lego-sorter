@@ -5,20 +5,20 @@ import os
 import sys
 from pathlib import Path
 
-current_dir: str = os.path.dirname(os.path.abspath(__file__))
+repo_root_dir: str = os.path.dirname(os.path.abspath(__file__))
 
-while current_dir and os.path.basename(current_dir) != "lego-sorter":
-    current_dir = os.path.dirname(current_dir)
+while repo_root_dir and os.path.basename(repo_root_dir) != "lego-sorter":
+    repo_root_dir = os.path.dirname(repo_root_dir)
 
-if current_dir:
-    sys.path.append(current_dir)
+if repo_root_dir:
+    sys.path.append(repo_root_dir)
 else:
     raise FileNotFoundError("Could not find 'lego-sorter' directory in path hierarchy.")
 
 from src.data import download
 from src.common import utils, tools
 from src.preprocess import build_features
-import engine, model
+import engine, src.model.model as model
 
 
 """ 
@@ -46,7 +46,7 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 
 # Setup directories
-data_path = Path("../data")
+data_path = Path(repo_root_dir + "/data")
 image_path: Path = data_path / "b200c-lego-classification-dataset"
 
 class_names: list[str] = os.listdir(image_path)
@@ -56,15 +56,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Create the machine learning model
-efficientnet_b0, weights = model.get_model_efficientnet_b0(
+efficientnet_b1, weights = model.get_model_efficientnet_b1(
     class_names=class_names, device=device
 )
 
 
-# Create transforms
+# Create a manual transform for the images if it is wanted to use that
 manual_transforms = transforms.Compose(
     [
-        transforms.Resize(size=(224, 224)),
+        transforms.Resize(size=(240, 240)),
         transforms.TrivialAugmentWide(num_magnitude_bins=16),
         transforms.Grayscale(),
         transforms.ToTensor(),
@@ -82,12 +82,12 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 
 # Set loss and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(efficientnet_b0.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(efficientnet_b1.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
 engine.train(
-    model=efficientnet_b0,
+    model=efficientnet_b1,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,
@@ -98,10 +98,10 @@ engine.train(
 
 
 # Save the trained model in the directory 'lego-sorter/models'
-model_save_path: str = os.path.join(current_dir, "models")
+model_save_path: str = os.path.join(repo_root_dir, "models")
 
 utils.save_model(
-    model=efficientnet_b0,
+    model=efficientnet_b1,
     target_dir=model_save_path,
-    model_name="efficientnet_b0_lego_sorterV1",
+    model_name="efficientnet_b1_lego_sorter.pth",
 )
