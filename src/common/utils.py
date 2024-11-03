@@ -15,7 +15,7 @@ def save_model(model: torch.nn.Module, target_dir: str, model_name: str):
     # Create model save path
     assert model_name.endswith(".pth") or model_name.endswith(".pt")
 
-    model_save_path = target_dir_path / model_name
+    model_save_path: Path = target_dir_path / model_name
 
     # Save the model state_dict()
     print(f"[INFO] Saving model to: {model_save_path}")
