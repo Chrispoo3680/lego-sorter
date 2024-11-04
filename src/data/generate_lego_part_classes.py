@@ -8,17 +8,22 @@ import os
 from tqdm import tqdm
 
 
-def get_part_classes(API_KEY, data_path, save_path):
-    rebrick.init(API_KEY)
+def get_part_classes(data_path: str, save_path: str):
 
-    part_list = os.listdir(data_path)
+    # This is the API key from "rebrickable.com". It can be created in the profile settings under the API tab.
+    # Provide it in the 'config.yaml' file.
+    rebrick.init(config["rebrickable_api"])
+
+    part_list: list[str] = os.listdir(data_path)
     part_classes = {}
 
     for part in tqdm(part_list):
         try:
             response = rebrick.lego.get_part(part)
             decoded = json.loads(response.read())
-            part_cat_id = decoded.get("part_cat_id", "Error: Part does not have a category id")
+            part_cat_id = decoded.get(
+                "part_cat_id", "Error: Part does not have a category id"
+            )
             part_classes.update({part: part_cat_id})
         except Exception as e:
             print(f"\nError occured at part:  {part}\n{e}")
@@ -31,7 +36,8 @@ def get_part_classes(API_KEY, data_path, save_path):
 
 if __name__ == "__main__":
     config = tools.load_config()
-    API_KEY = config["rebrickableapi"]    # This is the API key from "rebrickable.com". It can be created in the profile settings under the API tab.
-    data_path = f"{config["datadirectory"]}{config["dataname"]}/64/"
-    save_path = "src/data/part_classes.json"
-    get_part_classes(API_KEY, data_path, save_path)
+    data_path: str = os.path.join(
+        "../../", config["data_directory"], config["data_name"]
+    )
+    save_path: str = "part_classes.json"
+    get_part_classes(data_path=data_path, save_path=save_path)

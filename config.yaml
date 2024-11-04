@@ -1,18 +1,16 @@
 # DATA
-datalink: "https://www.kaggle.com/api/v1/datasets/download/ronanpickell/b200c-lego-classification-dataset"
-datahandle: "ronanpickell/b200c-lego-classification-dataset"
-dataname: b200c-lego-classification-dataset
-datadirectory: /data
+data_link: "https://www.kaggle.com/api/v1/datasets/download/ronanpickell/b200c-lego-classification-dataset"
+data_handle: "ronanpickell/b200c-lego-classification-dataset"
+data_name: b200c-lego-classification-dataset
+data_dir: /data
 
 # MODELS
-modelpath: /models/model.pkl
+model_path: /models
 
 # RESULTS
-resultsrawpath: /results/results_raw.pkl
-resultsevaluatedpath: /results/results_evaluated.pkl
-
-# VISUALIZATION
-figuredirectory: /reports/figures/
+results_path: /results
 
 # API KEYS
-rebrickableapi: "insert API key here" # Personal API key from "rebrickable.com" is needed.
+rebrickable_api: "INSERT API KEY HERE" # Personal API key from "rebrickable.com" is needed.
+kaggle_username: "YOUR KAGGLE USERNAME" # Instructions on how to get in "/src/data/download.py".
+kaggle_api: "INSERT API KEY HERE" # Instructions on how to get in "/src/data/download.py".

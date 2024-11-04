@@ -20,21 +20,22 @@ from src.common import utils, tools
 from src.preprocess import build_features
 import engine, src.model.model as model
 
-
-""" 
-Uncomment the comment bellow to download dataset when running train.py if dataset is not already downloaded.
-Dataset can also be downloaded from 'src/data/download.py'.
-"""
-"""
 config = tools.load_config()
-dataset_path = os.path.join(current_dir, config["datadirectory"], config["dataname"])
+
+
+"""
+Uncomment the comment bellow to download dataset when running train.py, if dataset is not already downloaded.
+Dataset can also be downloaded from '/src/data/download.py'.
+"""
+"""
+dataset_path = os.path.join(current_dir, config["data_dir"], config["data_name"])
 
 if os.path.isdir(dataset_path):
     print(f"'{dataset_path}' directory exists. Assuming dataset is already downloaded!")
 else:
-    data_handle = config["datahandle"]
-    data_name = config["dataname"]
-    save_path = os.path.join(current_dir, config["datadirectory"])
+    data_handle = config["data_handle"]
+    data_name = config["data_name"]
+    save_path = os.path.join(current_dir, config["data_dir"])
     # print(f"Downloadting files from: {data_handle}, named: {data_name}, to: {save_path}")
     download.download_data(data_handle, save_path, data_name)
 """
@@ -44,9 +45,11 @@ else:
 NUM_EPOCHS = 50
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
+MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
+
 
 # Setup directories
-data_path = Path(repo_root_dir + "/data")
+data_path = Path(repo_root_dir + config["data_dir"])
 image_path: Path = data_path / "b200c-lego-classification-dataset"
 
 class_names: list[str] = os.listdir(image_path)
@@ -98,10 +101,10 @@ engine.train(
 
 
 # Save the trained model in the directory 'lego-sorter/models'
-model_save_path: str = os.path.join(repo_root_dir, "models")
+model_save_path: str = os.path.join(repo_root_dir, config["model_path"])
 
 utils.save_model(
     model=efficientnet_b1,
     target_dir=model_save_path,
-    model_name="efficientnet_b1_lego_sorter.pth",
+    model_name=MODEL_SAVE_NAME,
 )
