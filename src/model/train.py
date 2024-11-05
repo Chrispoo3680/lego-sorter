@@ -5,40 +5,35 @@ import os
 import sys
 from pathlib import Path
 
-repo_root_dir: str = os.path.dirname(os.path.abspath(__file__))
-
-while repo_root_dir and os.path.basename(repo_root_dir) != "lego-sorter":
-    repo_root_dir = os.path.dirname(repo_root_dir)
-
-if repo_root_dir:
-    sys.path.append(repo_root_dir)
-else:
-    raise FileNotFoundError("Could not find 'lego-sorter' directory in path hierarchy.")
+repo_root_dir: Path = Path(__file__).parent.parent.parent
+sys.path.append(str(repo_root_dir))
 
 from src.data import download
 from src.common import utils, tools
 from src.preprocess import build_features
-import engine, src.model.model as model
+import engine, model
 
 config = tools.load_config()
+
+# Setup directories
+data_path: Path = repo_root_dir / config["data_path"]
+image_path: Path = data_path / config["data_name"]
 
 
 """
 Uncomment the comment bellow to download dataset when running train.py, if dataset is not already downloaded.
 Dataset can also be downloaded from '/src/data/download.py'.
 """
-"""
-dataset_path = os.path.join(current_dir, config["data_dir"], config["data_name"])
 
-if os.path.isdir(dataset_path):
-    print(f"'{dataset_path}' directory exists. Assuming dataset is already downloaded!")
+if os.path.isdir(image_path):
+    print(f"'{image_path}' directory exists. Assuming dataset is already downloaded!")
 else:
     data_handle = config["data_handle"]
     data_name = config["data_name"]
-    save_path = os.path.join(current_dir, config["data_dir"])
-    # print(f"Downloadting files from: {data_handle}, named: {data_name}, to: {save_path}")
-    download.download_data(data_handle, save_path, data_name)
-"""
+    # print(f"Downloadting files from: {data_handle}, named: {data_name}, to: {data_path}")
+    download.download_data(
+        data_handle=data_handle, save_path=data_path, data_name=data_name
+    )
 
 
 # Setup hyperparameters
@@ -48,17 +43,13 @@ LEARNING_RATE = 0.001
 MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
 
 
-# Setup directories
-data_path = Path(repo_root_dir + config["data_dir"])
-image_path: Path = data_path / "b200c-lego-classification-dataset"
-
-class_names: list[str] = os.listdir(image_path)
-
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Create the machine learning model
+class_names: list[str] = os.listdir(image_path)
+
 efficientnet_b1, weights = model.get_model_efficientnet_b1(
     class_names=class_names, device=device
 )
@@ -79,7 +70,7 @@ auto_transforms = weights.transforms()
 
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
-    data_dir=image_path, transform=auto_transforms, batch_size=BATCH_SIZE
+    data_dir_path=image_path, transform=auto_transforms, batch_size=BATCH_SIZE
 )
 
 
@@ -101,10 +92,10 @@ engine.train(
 
 
 # Save the trained model in the directory 'lego-sorter/models'
-model_save_path: str = os.path.join(repo_root_dir, config["model_path"])
+model_save_path: Path = repo_root_dir / config["model_path"]
 
 utils.save_model(
     model=efficientnet_b1,
-    target_dir=model_save_path,
+    target_dir_path=model_save_path,
     model_name=MODEL_SAVE_NAME,
 )

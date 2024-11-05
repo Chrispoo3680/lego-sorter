@@ -14,7 +14,7 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 
 
 def create_dataloaders(
-    data_dir: Path,
+    data_dir_path: Path,
     transform: transforms.Compose,
     batch_size: int,
     num_workers: int = NUM_WORKERS,
@@ -22,7 +22,7 @@ def create_dataloaders(
 
     # Make data folder into dataset
     full_dataset = datasets.ImageFolder(
-        root=data_dir, transform=transform, target_transform=None
+        root=data_dir_path, transform=transform, target_transform=None
     )
 
     # Split into training and testing data (80% training, 20% testing)

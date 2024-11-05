@@ -1,9 +1,13 @@
-""" THIS FILE MUST BE RUN FROM THE ROOT DIRECTORY (lego-sorter) OR INDIRECTLY FROM RUNNING '/src/model/train.py'"""
-
 # This file is meant to be used for downloading datasets from "kaggle.com" with the kaggle API.
 # If any other datasets with potentially other API's is wanted to be used, there is no guarantee the code will work without being changed.
 
-from src.common import tools
+import sys
+from pathlib import Path
+
+repo_root_dir: Path = Path(__file__).parent.parent
+sys.path.append(str(repo_root_dir))
+
+from common import tools
 import os
 import kaggle
 
@@ -13,7 +17,7 @@ import kaggle
 # Your kaggle username and API key will be in the 'kaggle.json' file.
 def download_data(
     data_handle: str,
-    save_path: str,
+    save_path: Path,
     data_name: str,
 ):
 
@@ -29,12 +33,12 @@ def download_data(
     # Create path if it doesn't exist
     os.makedirs(save_path, exist_ok=True)
     kaggle.api.dataset_download_files(data_handle, path=save_path, unzip=True)
-    os.rename(os.path.join(save_path, "64"), os.path.join(save_path, data_name))
+    os.rename(save_path / "64", save_path / data_name)
 
 
 if __name__ == "__main__":
     config = tools.load_config()
-    data_handle = config["data_handle"]
-    save_path = config["data_dir"]
-    data_name = config["data_name"]
+    data_handle: str = config["data_handle"]
+    save_path: Path = repo_root_dir / config["data_path"]
+    data_name: str = config["data_name"]
     download_data(data_handle=data_handle, save_path=save_path, data_name=data_name)
