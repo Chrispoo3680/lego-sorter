@@ -94,7 +94,7 @@ optimizer = torch.optim.Adam(efficientnet_b1.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
-logging.info("  Starting training:\n")
+logging.info("  Starting training...\n")
 
 engine.train(
     model=efficientnet_b1,
