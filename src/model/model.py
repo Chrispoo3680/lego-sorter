@@ -40,7 +40,7 @@ def get_model_efficientnet_b1(class_names: list[str], device: torch.device):
     weights = models.EfficientNet_B1_Weights.DEFAULT
 
     # Transfering the model 'efficientnet_b0'
-    efficientnet_b1 = models.efficientnet_b0(weights=weights).to(device)
+    efficientnet_b1 = models.efficientnet_b1(weights=weights).to(device)
 
     # Freeze all base layers in the "features" section of the model (the feature extractor) by setting requires_grad=False
     for param in efficientnet_b1.features.parameters():

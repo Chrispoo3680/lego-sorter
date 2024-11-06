@@ -1,3 +1,7 @@
+"""
+This is a file for training the lego classifier model. This file have to be run from the folder it is in.
+"""
+
 import torch
 from torchvision import transforms
 
@@ -50,7 +54,7 @@ MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logging.info("  Using device =", device)
+logging.info(f"  Using device = {device}")
 
 
 # Create the machine learning model
@@ -62,7 +66,7 @@ efficientnet_b1, weights = model.get_model_efficientnet_b1(
     class_names=class_names, device=device
 )
 
-logging.info("  Successfully loaded model:    ", efficientnet_b1.__class__.__name__)
+logging.info(f"  Successfully loaded model: {efficientnet_b1.__class__.__name__}")
 
 
 # Create a manual transform for the images if it is wanted to use that
