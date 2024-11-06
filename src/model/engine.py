@@ -4,7 +4,7 @@ Contains functions for training and testing a PyTorch model.
 
 import torch
 
-from tqdm.auto import tqdm
+from tqdm import tqdm
 import logging
 
 
@@ -88,7 +88,7 @@ def train(
 
     results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
 
-    for epoch in tqdm(range(epochs)):
+    for epoch in tqdm(range(epochs), position=0, leave=True):
         train_loss, train_acc = train_step(
             model=model,
             dataloader=train_dataloader,
