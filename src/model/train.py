@@ -30,7 +30,9 @@ Dataset can also be downloaded from '/src/data/download.py'.
 """
 
 if os.path.isdir(image_path):
-    print(f"'{image_path}' directory exists. Assuming dataset is already downloaded!")
+    logging.info(
+        f"  '{image_path}' directory exists. Assuming dataset is already downloaded!"
+    )
 else:
     data_handle = config["data_handle"]
     data_name = config["data_name"]
