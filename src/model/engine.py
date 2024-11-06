@@ -5,6 +5,7 @@ Contains functions for training and testing a PyTorch model.
 import torch
 
 from tqdm.auto import tqdm
+import logging
 
 
 def train_step(
@@ -83,6 +84,8 @@ def train(
     device: torch.device,
 ):
 
+    logging.basicConfig(level=logging.INFO)
+
     results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
 
     for epoch in tqdm(range(epochs)):
@@ -97,8 +100,8 @@ def train(
             model=model, dataloader=test_dataloader, loss_fn=loss_fn, device=device
         )
 
-        print(
-            f"Epoch: {epoch+1} | "
+        logging.info(
+            f"      Epoch: {epoch+1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
             f"test_loss: {test_loss:.4f} | "

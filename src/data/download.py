@@ -10,11 +10,13 @@ sys.path.append(str(repo_root_dir))
 from common import tools
 import os
 import kaggle
-
+import logging
 
 # To use the kaggle API you have to provide your username and a generated API key in the "kaggle_username" and "kaggle_api" variables in 'config.yaml'.
 # You can get these by downloading the 'kaggle.json' file from your kaggle account by clicking on "create new token" under the API header in the settings tab.
 # Your kaggle username and API key will be in the 'kaggle.json' file.
+
+
 def download_data(
     data_handle: str,
     save_path: Path,
@@ -29,6 +31,10 @@ def download_data(
 
     # Download the lego piece dataset from kaggle.com
     kaggle.api.authenticate()
+
+    logging.info(
+        f"Downloading files from:  {data_handle} \nNamed:  {data_name} \nTo path:  {save_path}"
+    )
 
     # Create path if it doesn't exist
     os.makedirs(save_path, exist_ok=True)

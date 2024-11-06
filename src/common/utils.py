@@ -5,9 +5,12 @@ Contains various utility functions for PyTorch model training and saving.
 import torch
 import os
 from pathlib import Path
+import logging
 
 
 def save_model(model: torch.nn.Module, target_dir_path: Path, model_name: str):
+
+    logging.basicConfig(level=logging.INFO)
 
     # Create target directory
     target_dir_path.mkdir(parents=True, exist_ok=True)
@@ -25,5 +28,5 @@ def save_model(model: torch.nn.Module, target_dir_path: Path, model_name: str):
     model_save_path: Path = target_dir_path / save_name
 
     # Save the model state_dict()
-    print(f"[INFO] Saving model to: {model_save_path}")
+    logging.info("  Saving model to:    ", model_save_path)
     torch.save(obj=model.state_dict(), f=model_save_path)

@@ -1,12 +1,14 @@
 import torch
 from torchvision import transforms
 
-import os
 import sys
 from pathlib import Path
 
 repo_root_dir: Path = Path(__file__).parent.parent.parent
 sys.path.append(str(repo_root_dir))
+
+import os
+import logging
 
 from src.data import download
 from src.common import utils, tools
@@ -14,6 +16,8 @@ from src.preprocess import build_features
 import engine, model
 
 config = tools.load_config()
+
+logging.basicConfig(level=logging.INFO)
 
 # Setup directories
 data_path: Path = repo_root_dir / config["data_path"]
@@ -30,7 +34,6 @@ if os.path.isdir(image_path):
 else:
     data_handle = config["data_handle"]
     data_name = config["data_name"]
-    # print(f"Downloadting files from: {data_handle}, named: {data_name}, to: {data_path}")
     download.download_data(
         data_handle=data_handle, save_path=data_path, data_name=data_name
     )
@@ -45,14 +48,19 @@ MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logging.info("  Using device =", device)
 
 
 # Create the machine learning model
 class_names: list[str] = os.listdir(image_path)
 
+logging.info("  Loading model...")
+
 efficientnet_b1, weights = model.get_model_efficientnet_b1(
     class_names=class_names, device=device
 )
+
+logging.info("  Successfully loaded model:    ", efficientnet_b1.__class__.__name__)
 
 
 # Create a manual transform for the images if it is wanted to use that
@@ -80,6 +88,8 @@ optimizer = torch.optim.Adam(efficientnet_b1.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
+logging.info("  Starting training:\n")
+
 engine.train(
     model=efficientnet_b1,
     train_dataloader=train_dataloader,
