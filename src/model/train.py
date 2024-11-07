@@ -5,7 +5,7 @@ This is a file for training the lego classifier model. This file have to be run 
 import torch
 from torchvision import transforms
 
-# %%
+
 import sys
 from pathlib import Path
 
@@ -28,8 +28,7 @@ image_path: Path = data_path / config["data_name"]
 
 model_save_path: Path = repo_root_dir / config["model_path"]
 
-logging_path: Path = repo_root_dir / config["logging_path"] / "training.log"
-# %%
+logging_path: Path = repo_root_dir / config["logging_path"]
 os.makedirs(logging_path, exist_ok=True)
 
 
@@ -38,7 +37,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-    handlers=[logging.FileHandler(logging_path), logging.StreamHandler()],
+    handlers=[
+        logging.FileHandler(logging_path / "training.log"),
+        logging.StreamHandler(),
+    ],
 )
 
 
