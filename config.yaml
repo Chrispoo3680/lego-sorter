@@ -10,6 +10,9 @@ model_path: models/
 # RESULTS
 results_path: results/
 
+# LOGGING
+logging_path: logs/
+
 # API KEYS
 rebrickable_api: INSERT API KEY HERE # Personal API key from "rebrickable.com" is needed.
 kaggle_username: YOUR KAGGLE USERNAME # Instructions on how to get in "/src/data/download.py".

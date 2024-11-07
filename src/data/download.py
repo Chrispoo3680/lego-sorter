@@ -20,9 +20,17 @@ def download_data(
     data_handle: str,
     save_path: Path,
     data_name: str,
+    logging_dir_path: Path,
 ):
 
     config = tools.load_config()
+
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
+        handlers=[logging.FileHandler(logging_dir_path), logging.StreamHandler()],
+    )
 
     # Set environment variables for Kaggle authentication
     os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
@@ -33,8 +41,8 @@ def download_data(
     # Download the lego piece dataset from kaggle.com
     kaggle.api.authenticate()
 
-    logging.info(
-        f"Downloading files from:  {data_handle} \nNamed:  {data_name} \nTo path:  {save_path}"
+    logger.info(
+        f"Downloading files...\n        From:  {data_handle}\n        Named:  {data_name}\n        To path:  {save_path}"
     )
 
     # Create path if it doesn't exist
@@ -42,7 +50,7 @@ def download_data(
     kaggle.api.dataset_download_files(data_handle, path=save_path, unzip=True)
     os.rename(save_path / "64", save_path / data_name)
 
-    logging.info("Successfully downloaded dataset files!")
+    logger.info("Successfully downloaded dataset files!")
 
 
 if __name__ == "__main__":
@@ -50,4 +58,10 @@ if __name__ == "__main__":
     data_handle: str = config["data_handle"]
     save_path: Path = repo_root_dir / config["data_path"]
     data_name: str = config["data_name"]
-    download_data(data_handle=data_handle, save_path=save_path, data_name=data_name)
+    log_path = Path("download.log")
+    download_data(
+        data_handle=data_handle,
+        save_path=save_path,
+        data_name=data_name,
+        logging_dir_path=log_path,
+    )

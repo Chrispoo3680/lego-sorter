@@ -21,11 +21,22 @@ import engine, model
 
 config = tools.load_config()
 
-logging.basicConfig(level=logging.INFO)
-
 # Setup directories
 data_path: Path = repo_root_dir / config["data_path"]
 image_path: Path = data_path / config["data_name"]
+
+model_save_path: Path = repo_root_dir / config["model_path"]
+
+logging_path: Path = repo_root_dir / config["logging_path"]
+
+
+# Setup logging for info and debugging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
+    handlers=[logging.FileHandler(logging_path), logging.StreamHandler()],
+)
 
 
 """
@@ -34,14 +45,17 @@ Dataset can also be downloaded from '/src/data/download.py'.
 """
 
 if os.path.isdir(image_path):
-    logging.info(
+    logger.info(
         f"  '{image_path}' directory exists. Assuming dataset is already downloaded!"
     )
 else:
     data_handle = config["data_handle"]
     data_name = config["data_name"]
     download.download_data(
-        data_handle=data_handle, save_path=data_path, data_name=data_name
+        data_handle=data_handle,
+        save_path=data_path,
+        data_name=data_name,
+        logging_dir_path=logging_path,
     )
 
 
@@ -49,24 +63,24 @@ else:
 NUM_EPOCHS = 50
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
-MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
+MODEL_SAVE_NAME = "efficientnet_b3_lego_sorter.pth"
 
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logging.info(f"  Using device = {device}")
+logger.info(f"  Using device = {device}")
 
 
 # Create the machine learning model
 class_names: list[str] = os.listdir(image_path)
 
-logging.info("  Loading model...")
+logger.info("  Loading model...")
 
-efficientnet_b1, weights = model.get_model_efficientnet_b1(
+efficientnet_b3, weights = model.get_model_efficientnet_b3(
     class_names=class_names, device=device
 )
 
-logging.info(f"  Successfully loaded model: {efficientnet_b1.__class__.__name__}")
+logger.info(f"  Successfully loaded model: {efficientnet_b3.__class__.__name__}")
 
 
 # Create a manual transform for the images if it is wanted to use that
@@ -90,28 +104,28 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 
 # Set loss and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(efficientnet_b1.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(efficientnet_b3.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
-logging.info("  Starting training...\n")
+logger.info("  Starting training...\n")
 
 engine.train(
-    model=efficientnet_b1,
+    model=efficientnet_b3,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,
     loss_fn=loss_fn,
     epochs=NUM_EPOCHS,
     device=device,
+    logging_dir_path=logging_path,
 )
 
 
-# Save the trained model in the directory 'lego-sorter/models'
-model_save_path: Path = repo_root_dir / config["model_path"]
-
+# Save the trained model
 utils.save_model(
-    model=efficientnet_b1,
+    model=efficientnet_b3,
     target_dir_path=model_save_path,
     model_name=MODEL_SAVE_NAME,
+    logging_dir_path=logging_path,
 )

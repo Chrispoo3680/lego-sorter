@@ -8,9 +8,19 @@ from pathlib import Path
 import logging
 
 
-def save_model(model: torch.nn.Module, target_dir_path: Path, model_name: str):
+def save_model(
+    model: torch.nn.Module,
+    target_dir_path: Path,
+    model_name: str,
+    logging_dir_path: Path,
+):
 
-    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
+        handlers=[logging.FileHandler(logging_dir_path), logging.StreamHandler()],
+    )
 
     # Create target directory
     os.makedirs(target_dir_path, exist_ok=True)
@@ -28,5 +38,5 @@ def save_model(model: torch.nn.Module, target_dir_path: Path, model_name: str):
     model_save_path: Path = target_dir_path / save_name
 
     # Save the model state_dict()
-    logging.info(f"  Saving model to: {model_save_path}")
+    logger.info(f"  Saving model to: {model_save_path}")
     torch.save(obj=model.state_dict(), f=model_save_path)

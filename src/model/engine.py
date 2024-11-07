@@ -4,6 +4,7 @@ Contains functions for training and testing a PyTorch model.
 
 import torch
 
+from pathlib import Path
 from tqdm import tqdm
 import logging
 
@@ -82,9 +83,15 @@ def train(
     loss_fn: torch.nn.Module,
     epochs: int,
     device: torch.device,
+    logging_dir_path: Path,
 ):
 
-    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
+        handlers=[logging.FileHandler(logging_dir_path), logging.StreamHandler()],
+    )
 
     results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
 
@@ -100,7 +107,7 @@ def train(
             model=model, dataloader=test_dataloader, loss_fn=loss_fn, device=device
         )
 
-        logging.info(
+        logger.info(
             f"      Epoch: {epoch+1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
