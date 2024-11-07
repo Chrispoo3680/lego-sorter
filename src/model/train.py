@@ -28,8 +28,10 @@ image_path: Path = data_path / config["data_name"]
 
 model_save_path: Path = repo_root_dir / config["model_path"]
 
-logging_path: Path = repo_root_dir / config["logging_path"]
-os.makedirs(logging_path, exist_ok=True)
+logging_dir_path: Path = repo_root_dir / config["logging_path"]
+os.makedirs(logging_dir_path, exist_ok=True)
+
+logging_file_path: Path = logging_dir_path / "training.log"
 
 
 # Setup logging for info and debugging
@@ -38,7 +40,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
     handlers=[
-        logging.FileHandler(logging_path / "training.log"),
+        logging.FileHandler(logging_file_path),
         logging.StreamHandler(),
     ],
 )
@@ -60,7 +62,7 @@ else:
         data_handle=data_handle,
         save_path=data_path,
         data_name=data_name,
-        logging_dir_path=logging_path,
+        logging_file_path=logging_file_path,
     )
 
 
@@ -123,7 +125,7 @@ engine.train(
     loss_fn=loss_fn,
     epochs=NUM_EPOCHS,
     device=device,
-    logging_dir_path=logging_path,
+    logging_file_path=logging_file_path,
 )
 
 
@@ -132,5 +134,5 @@ utils.save_model(
     model=efficientnet_b3,
     target_dir_path=model_save_path,
     model_name=MODEL_SAVE_NAME,
-    logging_dir_path=logging_path,
+    logging_file_path=logging_file_path,
 )

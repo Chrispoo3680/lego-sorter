@@ -12,14 +12,14 @@ def save_model(
     model: torch.nn.Module,
     target_dir_path: Path,
     model_name: str,
-    logging_dir_path: Path,
+    logging_file_path: Path,
 ):
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-        handlers=[logging.FileHandler(logging_dir_path), logging.StreamHandler()],
+        handlers=[logging.FileHandler(logging_file_path), logging.StreamHandler()],
     )
 
     # Create target directory

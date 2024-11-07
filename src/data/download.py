@@ -20,7 +20,7 @@ def download_data(
     data_handle: str,
     save_path: Path,
     data_name: str,
-    logging_dir_path: Path,
+    logging_file_path: Path,
 ):
 
     config = tools.load_config()
@@ -29,7 +29,7 @@ def download_data(
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-        handlers=[logging.FileHandler(logging_dir_path), logging.StreamHandler()],
+        handlers=[logging.FileHandler(logging_file_path), logging.StreamHandler()],
     )
 
     # Set environment variables for Kaggle authentication
@@ -63,5 +63,5 @@ if __name__ == "__main__":
         data_handle=data_handle,
         save_path=save_path,
         data_name=data_name,
-        logging_dir_path=log_path,
+        logging_file_path=log_path,
     )
