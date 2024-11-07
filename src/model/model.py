@@ -91,7 +91,7 @@ def get_model_efficientnet_b3(class_names: list[str], device: torch.device):
     efficientnet_b3.classifier = torch.nn.Sequential(
         torch.nn.Dropout(p=0.2, inplace=True),
         torch.nn.Linear(
-            in_features=1280,
+            in_features=1536,
             out_features=output_shape,
             bias=True,
         ),
