@@ -18,6 +18,12 @@ def get_model_efficientnet_b0(class_names: list[str], device: torch.device):
     for param in efficientnet_b0.features.parameters():
         param.requires_grad = False
 
+    for param in efficientnet_b0.features[8].parameters():
+        param.requires_grad = True
+
+    for param in efficientnet_b0.features[7].parameters():
+        param.requires_grad = True
+
     # Get the length of class_names (one output unit for each class)
     output_shape: int = len(class_names)
 

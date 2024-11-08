@@ -70,7 +70,7 @@ else:
 NUM_EPOCHS = 50
 BATCH_SIZE = 64
 LEARNING_RATE = 0.001
-MODEL_SAVE_NAME = "efficientnet_b1_lego_sorter.pth"
+MODEL_SAVE_NAME = "efficientnet_b0_lego_sorter.pth"
 
 
 # Setup target device
@@ -83,17 +83,15 @@ class_names: list[str] = os.listdir(image_path)
 
 logger.info("  Loading model...")
 
-efficientnet_b1, weights = model.get_model_efficientnet_b1(
-    class_names=class_names, device=device
-)
+model, weights = model.get_model_efficientnet_b0(class_names=class_names, device=device)
 
-logger.info(f"  Successfully loaded model: {efficientnet_b1.__class__.__name__}")
+logger.info(f"  Successfully loaded model: {model.__class__.__name__}")
 
 
 # Create a manual transform for the images if it is wanted to use that
 manual_transforms = transforms.Compose(
     [
-        transforms.Resize(size=(240, 240)),
+        transforms.Resize(size=(224, 224)),
         transforms.TrivialAugmentWide(num_magnitude_bins=16),
         transforms.Grayscale(),
         transforms.ToTensor(),
@@ -111,14 +109,14 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 
 # Set loss and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(efficientnet_b1.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
 logger.info("  Starting training...\n")
 
 engine.train(
-    model=efficientnet_b1,
+    model=model,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,
@@ -131,7 +129,7 @@ engine.train(
 
 # Save the trained model
 utils.save_model(
-    model=efficientnet_b1,
+    model=model,
     target_dir_path=model_save_path,
     model_name=MODEL_SAVE_NAME,
     logging_file_path=logging_file_path,
