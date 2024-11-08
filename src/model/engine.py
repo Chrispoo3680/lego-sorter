@@ -5,7 +5,7 @@ Contains functions for training and testing a PyTorch model.
 import torch
 
 from pathlib import Path
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import logging
 
 
