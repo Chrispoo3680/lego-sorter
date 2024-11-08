@@ -46,12 +46,10 @@ logging.basicConfig(
     ],
 )
 
+logger.info("\n\n\n")
 
-"""
-Uncomment the comment bellow to download dataset when running train.py, if dataset is not already downloaded.
-Dataset can also be downloaded from '/src/data/download.py'.
-"""
 
+# Download dataset if not already downloaded
 if os.path.isdir(image_path):
     logger.info(
         f"  '{image_path}' directory exists. Assuming dataset is already downloaded!"
