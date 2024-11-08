@@ -14,6 +14,7 @@ sys.path.append(str(repo_root_dir))
 
 import os
 import logging
+from tqdm import tqdm
 import argparse
 
 from src.data import download
@@ -36,23 +37,14 @@ logging_file_path: Path = logging_dir_path / "training.log"
 
 
 # Setup logging for info and debugging
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-    handlers=[
-        logging.FileHandler(logging_file_path),
-        logging.StreamHandler(),
-    ],
-)
-
+logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 logger.info("\n\n\n")
 
 
 # Download dataset if not already downloaded
 if os.path.isdir(image_path):
     logger.info(
-        f"  '{image_path}' directory exists. Assuming dataset is already downloaded!"
+        f"'{image_path}' directory exists. Assuming dataset is already downloaded!"
     )
 else:
     data_handle = config["data_handle"]
@@ -84,30 +76,30 @@ args = parser.parse_args()
 NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
-MODEL_SAVE_NAME = args.model_save_name
+MODEL_SAVE_NAME = args.model_save_name + ".pth"
 
 logger.info(
     f"Using hyperparameters:"
-    f"\n        num_epochs = {NUM_EPOCHS}"
-    f"\n        batch_size = {BATCH_SIZE}"
-    f"\n        learning_rate = {LEARNING_RATE}"
-    f"\n        model_save_name = {MODEL_SAVE_NAME}"
+    f"\n    num_epochs = {NUM_EPOCHS}"
+    f"\n    batch_size = {BATCH_SIZE}"
+    f"\n    learning_rate = {LEARNING_RATE}"
+    f"\n    model_save_name = {MODEL_SAVE_NAME}"
 )
 
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logger.info(f"  Using device = {device}")
+logger.info(f"Using device = {device}")
 
 
 # Create the machine learning model
 class_names: list[str] = os.listdir(image_path)
 
-logger.info("  Loading model...")
+logger.info("Loading model...")
 
 model, weights = model.get_model_efficientnet_b0(class_names=class_names, device=device)
 
-logger.info(f"  Successfully loaded model: {model.__class__.__name__}")
+logger.info(f"Successfully loaded model: {model.__class__.__name__}")
 
 
 # Create a manual transform for the images if it is wanted to use that
@@ -135,7 +127,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
-logger.info("  Starting training...\n")
+logger.info("Starting training...\n")
 
 engine.train(
     model=model,

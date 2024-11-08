@@ -5,8 +5,9 @@ Contains functions for training and testing a PyTorch model.
 import torch
 
 from pathlib import Path
-from tqdm.auto import tqdm
+from tqdm import tqdm
 import logging
+from src.common import tools
 
 
 def train_step(
@@ -86,12 +87,7 @@ def train(
     logging_file_path: Path,
 ):
 
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-        handlers=[logging.FileHandler(logging_file_path), logging.StreamHandler()],
-    )
+    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
     results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
 
@@ -108,7 +104,7 @@ def train(
         )
 
         logger.info(
-            f"      Epoch: {epoch+1} | "
+            f"  Epoch: {epoch+1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
             f"test_loss: {test_loss:.4f} | "

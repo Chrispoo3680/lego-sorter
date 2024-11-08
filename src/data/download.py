@@ -25,12 +25,7 @@ def download_data(
 
     config = tools.load_config()
 
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s  -  %(name)s  -  %(levelname)s:    %(message)s",
-        handlers=[logging.FileHandler(logging_file_path), logging.StreamHandler()],
-    )
+    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
     # Set environment variables for Kaggle authentication
     os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
