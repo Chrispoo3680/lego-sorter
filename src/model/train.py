@@ -14,6 +14,7 @@ sys.path.append(str(repo_root_dir))
 
 import os
 import logging
+import argparse
 
 from src.data import download
 from src.common import utils, tools
@@ -65,12 +66,35 @@ else:
         logging_file_path=logging_file_path,
     )
 
+# Setup arguments parsing for hyperparameters
+parser = argparse.ArgumentParser(description="Hyperparameter configuration")
+
+parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
+parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
+parser.add_argument(
+    "--model_save_name",
+    type=str,
+    default="efficientnet_b0_lego_sorter",
+    help="Model save name",
+)
+
+args = parser.parse_args()
+
 
 # Setup hyperparameters
-NUM_EPOCHS = 50
-BATCH_SIZE = 64
-LEARNING_RATE = 0.001
-MODEL_SAVE_NAME = "efficientnet_b0_lego_sorter.pth"
+NUM_EPOCHS = args.num_epochs
+BATCH_SIZE = args.batch_size
+LEARNING_RATE = args.learning_rate
+MODEL_SAVE_NAME = args.model_save_name
+
+logger.info(
+    f"Using hyperparameters:"
+    f"\n        num_epochs = {NUM_EPOCHS}"
+    f"\n        batch_size = {BATCH_SIZE}"
+    f"\n        learning_rate = {LEARNING_RATE}"
+    f"\n        model_save_name = {MODEL_SAVE_NAME}"
+)
 
 
 # Setup target device

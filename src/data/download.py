@@ -42,7 +42,10 @@ def download_data(
     kaggle.api.authenticate()
 
     logger.info(
-        f"Downloading files...\n        From:  {data_handle}\n        Named:  {data_name}\n        To path:  {save_path}"
+        f"Downloading files..."
+        f"\n        From:  {data_handle}"
+        f"\n        Named:  {data_name}"
+        f"\n        To path:  {save_path}"
     )
 
     # Create path if it doesn't exist
