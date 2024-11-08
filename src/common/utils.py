@@ -28,15 +28,18 @@ def save_model(
     # Create model save path
     assert model_name.endswith(".pth") or model_name.endswith(".pt")
 
-    # Checks if there are already files with the same name in target directory
-    files_in_dir: list[str] = os.listdir(target_dir_path)
-    version = str(sum([1 for file in files_in_dir if model_name in file]))
-
-    file_name, file_type = model_name.split(".")
-    save_name: str = f"{file_name}V{version}.{file_type}"
-
-    model_save_path: Path = target_dir_path / save_name
+    model_save_path = target_dir_path / model_name
 
     # Save the model state_dict()
     logger.info(f"  Saving model to: {model_save_path}")
     torch.save(obj=model.state_dict(), f=model_save_path)
+
+
+def model_save_version(save_dir_path: Path, save_name: str):
+
+    files_in_dir: list[str] = os.listdir(save_dir_path)
+    version = str(sum([1 for file in files_in_dir if save_name in file]))
+
+    save_name_version: str = f"{save_name}V{version}"
+
+    return save_name_version

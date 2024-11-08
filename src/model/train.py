@@ -16,6 +16,7 @@ import os
 import logging
 from tqdm import tqdm
 import argparse
+import json
 
 from src.data import download
 from src.common import utils, tools
@@ -29,6 +30,8 @@ data_path: Path = repo_root_dir / config["data_path"]
 image_path: Path = data_path / config["data_name"]
 
 model_save_path: Path = repo_root_dir / config["model_path"]
+
+results_save_path: Path = repo_root_dir / config["results_path"]
 
 logging_dir_path: Path = repo_root_dir / config["logging_path"]
 os.makedirs(logging_dir_path, exist_ok=True)
@@ -76,7 +79,7 @@ args = parser.parse_args()
 NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
-MODEL_SAVE_NAME = args.model_save_name + ".pth"
+MODEL_SAVE_NAME = args.model_save_name
 
 logger.info(
     f"Using hyperparameters:"
@@ -97,9 +100,11 @@ class_names: list[str] = os.listdir(image_path)
 
 logger.info("Loading model...")
 
-model, weights = model.get_model_efficientnet_b0(class_names=class_names, device=device)
+cnn_model, weights = model.get_model_efficientnet_b0(
+    class_names=class_names, device=device
+)
 
-logger.info(f"Successfully loaded model: {model.__class__.__name__}")
+logger.info(f"Successfully loaded model: {cnn_model.__class__.__name__}")
 
 
 # Create a manual transform for the images if it is wanted to use that
@@ -123,14 +128,14 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 
 # Set loss and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
 
 
 # Train model with the training loop
 logger.info("Starting training...\n")
 
-engine.train(
-    model=model,
+results = engine.train(
+    model=cnn_model,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,
@@ -142,9 +147,20 @@ engine.train(
 
 
 # Save the trained model
+model_save_name_version: str = utils.model_save_version(
+    save_dir_path=model_save_path, save_name=MODEL_SAVE_NAME
+)
+
 utils.save_model(
-    model=model,
+    model=cnn_model,
     target_dir_path=model_save_path,
-    model_name=MODEL_SAVE_NAME,
+    model_name=model_save_name_version + ".pth",
     logging_file_path=logging_file_path,
 )
+
+
+# Saving training results
+results_json = json.dumps(results, indent=4)
+
+with open(model_save_name_version + ".json", "w") as f:
+    f.write(results_json)

@@ -38,9 +38,9 @@ def download_data(
 
     logger.info(
         f"Downloading files..."
-        f"\n        From:  {data_handle}"
-        f"\n        Named:  {data_name}"
-        f"\n        To path:  {save_path}"
+        f"\n    From:  {data_handle}"
+        f"\n    Named:  {data_name}"
+        f"\n    To path:  {save_path}"
     )
 
     # Create path if it doesn't exist

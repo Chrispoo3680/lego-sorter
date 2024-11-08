@@ -104,7 +104,7 @@ def train(
         )
 
         logger.info(
-            f"  Epoch: {epoch+1} | "
+            f"      Epoch: {epoch+1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
             f"test_loss: {test_loss:.4f} | "
