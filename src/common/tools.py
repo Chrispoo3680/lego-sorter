@@ -10,7 +10,7 @@ class TqdmLoggingHandler(logging.Handler):
         tqdm.write(msg)
 
 
-def create_logger(log_path: Path, logger_name: str):
+def create_logger(log_path: Path, logger_name: str) -> logging.Logger:
     # Set up logging
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)

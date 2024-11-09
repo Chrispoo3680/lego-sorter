@@ -3,6 +3,8 @@ Contains functions for training and testing a PyTorch model.
 """
 
 import torch
+from torch import nn
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from pathlib import Path
 from tqdm import tqdm
@@ -11,9 +13,9 @@ from src.common import tools
 
 
 def train_step(
-    model: torch.nn.Module,
+    model: nn.Module,
     dataloader: torch.utils.data.DataLoader,
-    loss_fn: torch.nn.Module,
+    loss_fn: nn.Module,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
 ):
@@ -47,9 +49,9 @@ def train_step(
 
 
 def test_step(
-    model: torch.nn.Module,
+    model: nn.Module,
     dataloader: torch.utils.data.DataLoader,
-    loss_fn: torch.nn.Module,
+    loss_fn: nn.Module,
     device: torch.device,
 ):
 
@@ -77,19 +79,29 @@ def test_step(
 
 
 def train(
-    model: torch.nn.Module,
+    model: nn.Module,
     train_dataloader: torch.utils.data.DataLoader,
     test_dataloader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
-    loss_fn: torch.nn.Module,
+    loss_fn: nn.Module,
+    lr_scheduler: torch.optim.lr_scheduler.StepLR,
     epochs: int,
     device: torch.device,
     logging_file_path: Path,
+    writer: SummaryWriter | None,
 ):
 
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
+    logger: logging.Logger = tools.create_logger(
+        log_path=logging_file_path, logger_name=__name__
+    )
 
-    results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
+    results = {
+        "learning_rate": [],
+        "train_loss": [],
+        "train_acc": [],
+        "test_loss": [],
+        "test_acc": [],
+    }
 
     for epoch in tqdm(range(epochs), position=0, leave=True):
         train_loss, train_acc = train_step(
@@ -103,17 +115,42 @@ def train(
             model=model, dataloader=test_dataloader, loss_fn=loss_fn, device=device
         )
 
+        # Adjust learning rate
+        lr_scheduler.step()
+
         logger.info(
-            f"      Epoch: {epoch+1} | "
-            f"train_loss: {train_loss:.4f} | "
-            f"train_acc: {train_acc:.4f} | "
-            f"test_loss: {test_loss:.4f} | "
+            f"      Epoch: {epoch+1}  |  "
+            f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
+            f"train_loss: {train_loss:.4f}  |  "
+            f"train_acc: {train_acc:.4f}  |  "
+            f"test_loss: {test_loss:.4f}  |  "
             f"test_acc: {test_acc:.4f}"
         )
 
+        results["learning_rate"].append(optimizer.param_groups[0]["lr"])
         results["train_loss"].append(train_loss)
         results["train_acc"].append(train_acc)
         results["test_loss"].append(test_loss)
         results["test_acc"].append(test_acc)
+
+        # See if there's a writer, if so, log to it
+        if writer:
+            writer.add_scalar(
+                tag="Learning rate",
+                scalar_value={optimizer.param_groups[0]["lr"]},
+                global_step=epoch,
+            )
+            writer.add_scalars(
+                main_tag="Loss",
+                tag_scalar_dict={"train_loss": train_loss, "test_loss": test_loss},
+                global_step=epoch,
+            )
+            writer.add_scalars(
+                main_tag="Accuracy",
+                tag_scalar_dict={"train_acc": train_acc, "test_acc": test_acc},
+                global_step=epoch,
+            )
+
+            writer.close()
 
     return results

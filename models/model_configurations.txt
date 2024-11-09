@@ -1,0 +1,32 @@
+efficientnet_b0_lego_sorterV0:
+	Frozen blocks: 1-6
+	Unfrozen blocks: 7, 8 and classifier
+	hyperparameters:
+		num_epochs = 50
+		batch_size = 64
+		learning_rate = 0.001
+	End of training accuracy:
+		train_acc = 0.8915
+		test_acc = 0.8515
+
+efficientnet_b0_lego_sorterV1 (currently training):
+	Frozen blocks: 1-5, 7
+	Unfrozen blocks: 6, 8 and classifier
+	hyperparameters:
+		num_epochs = 50
+		batch_size = 64
+		learning_rate = 0.001
+	End of training accuracy:
+		train_acc = ?
+		test_acc = ?
+
+efficientnet_b0_lego_sorterV2 (not trained yet):
+	Frozen blocks: 1-5
+	Unfrozen blocks: 6-8 and classifier
+	hyperparameters:
+		num_epochs = 50
+		batch_size = 64
+		learning_rate = 0.001
+	End of training accuracy:
+		train_acc = ?
+		test_acc = ?
