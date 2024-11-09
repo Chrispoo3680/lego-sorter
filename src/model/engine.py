@@ -137,7 +137,7 @@ def train(
         if writer:
             writer.add_scalar(
                 tag="Learning rate",
-                scalar_value={optimizer.param_groups[0]["lr"]},
+                scalar_value=optimizer.param_groups[0]["lr"],
                 global_step=epoch,
             )
             writer.add_scalars(
