@@ -122,6 +122,7 @@ logger.info(
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
+    f"\n    experiment_name = {EXPERIMENT_VARIABLE}"
 )
 
 
