@@ -96,6 +96,7 @@ logger: logging.Logger = tools.create_logger(
     log_path=logging_file_path, logger_name=__name__
 )
 logger.info("\n\n\n")
+logger.info(f"Logging to file: {logging_file_path}")
 
 
 # Download dataset if not already downloaded
@@ -153,8 +154,8 @@ unfrozen_blocks: list[str] = [
 
 logger.info(
     f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable):  {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable):  {', '.join(unfrozen_blocks)}"
+    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
 )
 
 
