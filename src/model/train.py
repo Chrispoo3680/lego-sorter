@@ -183,13 +183,13 @@ loss_fn = nn.CrossEntropyLoss()
 
 optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-    optimizer, milestones=[10, 20, 30, 40], gamma=0.1
+    optimizer, milestones=[11, 21, 31, 41], gamma=0.1
 )
 
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=5, min_delta=0.001)
+early_stopping = utils.EarlyStopping(patience=3, min_delta=0.001)
 
 results = engine.train(
     model=cnn_model,
