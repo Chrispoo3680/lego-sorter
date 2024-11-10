@@ -89,6 +89,7 @@ def train(
     device: torch.device,
     logging_file_path: Path,
     writer: SummaryWriter | None,
+    early_stopping,
 ):
 
     logger: logging.Logger = tools.create_logger(
@@ -118,13 +119,14 @@ def train(
         # Adjust learning rate
         lr_scheduler.step()
 
+        # Log and save epoch loss and accuracy results
         logger.info(
             f"      Epoch: {epoch+1}  |  "
-            f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
             f"train_loss: {train_loss:.4f}  |  "
             f"train_acc: {train_acc:.4f}  |  "
             f"test_loss: {test_loss:.4f}  |  "
-            f"test_acc: {test_acc:.4f}"
+            f"test_acc: {test_acc:.4f}  |  "
+            f"learning_rate: {optimizer.param_groups[0]['lr']}"
         )
 
         results["learning_rate"].append(optimizer.param_groups[0]["lr"])
@@ -152,5 +154,13 @@ def train(
             )
 
             writer.close()
+
+        # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
+        early_stopping(test_loss)
+        if early_stopping.early_stop:
+            logger.info(
+                f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"
+            )
+            break
 
     return results

@@ -182,11 +182,14 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 loss_fn = nn.CrossEntropyLoss()
 
 optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
-lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    optimizer, step_size=10, gamma=0.1, last_epoch=0
+)
 
 
 # Train model with the training loop
 logger.info("Starting training...\n")
+early_stopping = utils.EarlyStopping(patience=5, min_delta=0.001)
 
 results = engine.train(
     model=cnn_model,
@@ -199,6 +202,7 @@ results = engine.train(
     device=device,
     logging_file_path=logging_file_path,
     writer=writer,
+    early_stopping=early_stopping,
 )
 
 
@@ -206,12 +210,14 @@ results = engine.train(
 utils.save_model(
     model=cnn_model,
     target_dir_path=model_save_path,
-    model_name=model_save_name_version + ".pth",
+    model_name=model_save_name_version + ".pt",
     logging_file_path=logging_file_path,
 )
 
 
 # Save training results
+os.makedirs(results_save_path, exist_ok=True)
+
 results_json = json.dumps(results, indent=4)
 
 with open(results_save_path / (model_save_name_version + "_results.json"), "w") as f:

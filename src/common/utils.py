@@ -11,6 +11,33 @@ import logging
 from src.common import tools
 
 
+class EarlyStopping:
+    def __init__(self, patience: int, min_delta: float):
+        """
+        Args:
+            patience (int): How many epochs to wait after the last improvement.
+            min_delta (float): Minimum change to qualify as an improvement.
+        """
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+
+    def __call__(self, val_loss):
+        # If first validation loss, set it as best_score
+        if self.best_score is None:
+            self.best_score = val_loss
+        # Check if there’s an improvement
+        elif val_loss < self.best_score - self.min_delta:
+            self.best_score = val_loss
+            self.counter = 0  # Reset patience counter
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+
+
 def save_model(
     model: torch.nn.Module,
     target_dir_path: Path,
