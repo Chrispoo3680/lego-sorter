@@ -71,7 +71,7 @@ results_save_path: Path = repo_root_dir / config["results_path"]
 logging_dir_path: Path = repo_root_dir / config["logging_path"]
 os.makedirs(logging_dir_path, exist_ok=True)
 
-logging_file_path: Path = logging_dir_path / (model_save_name_version + "training.log")
+logging_file_path: Path = logging_dir_path / (model_save_name_version + "_training.log")
 
 
 # Setup SummaryWriter for tensorboards
