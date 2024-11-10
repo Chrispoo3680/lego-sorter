@@ -182,8 +182,8 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 loss_fn = nn.CrossEntropyLoss()
 
 optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
-lr_scheduler = torch.optim.lr_scheduler.StepLR(
-    optimizer, step_size=10, gamma=0.1, last_epoch=0
+lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+    optimizer, milestones=[10, 20, 30, 40], gamma=0.1
 )
 
 

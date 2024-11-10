@@ -84,7 +84,7 @@ def train(
     test_dataloader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.Module,
-    lr_scheduler: torch.optim.lr_scheduler.StepLR,
+    lr_scheduler: torch.optim.lr_scheduler.MultiStepLR,
     epochs: int,
     device: torch.device,
     logging_file_path: Path,
