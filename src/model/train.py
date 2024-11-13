@@ -74,6 +74,14 @@ os.makedirs(logging_dir_path, exist_ok=True)
 logging_file_path: Path = logging_dir_path / (model_save_name_version + "_training.log")
 
 
+# Setup logging for info and debugging
+logger: logging.Logger = tools.create_logger(
+    log_path=logging_file_path, logger_name=__name__
+)
+logger.info("\n\n")
+logger.info(f"Logging to file: {logging_file_path}")
+
+
 # Setup SummaryWriter for tensorboards
 if EXPERIMENT_NAME and EXPERIMENT_VARIABLE:
     writer: SummaryWriter | None = utils.create_writer(
@@ -89,14 +97,6 @@ elif EXPERIMENT_NAME or EXPERIMENT_VARIABLE:
     )
 else:
     writer = None
-
-
-# Setup logging for info and debugging
-logger: logging.Logger = tools.create_logger(
-    log_path=logging_file_path, logger_name=__name__
-)
-logger.info("\n\n\n")
-logger.info(f"Logging to file: {logging_file_path}")
 
 
 # Download dataset if not already downloaded

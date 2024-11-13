@@ -45,7 +45,9 @@ def save_model(
     logging_file_path: Path,
 ):
 
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
+    logger: logging.Logger = tools.create_logger(
+        log_path=logging_file_path, logger_name=__name__
+    )
 
     # Create target directory
     os.makedirs(target_dir_path, exist_ok=True)
