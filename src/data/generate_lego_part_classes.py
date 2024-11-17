@@ -34,10 +34,11 @@ def part_class(part: str):
             except urllib.error.HTTPError as errh:
                 if errh.code == 404:
                     tqdm.write(f"\nPart with id: {part} was not recognised.\n{errh}")
-                elif errh.code == 400:
+                elif errh.code == 401:
                     tqdm.write(
                         f"\nUser not authenticated! Please provide a valid API key.\n{errh}"
                     )
+                    exit()
                 else:
                     tqdm.write(f"\nError occured.\n{errh}")
     return None
@@ -76,6 +77,7 @@ def get_part_classes(data_path: Path, save_path: Path):
             tqdm.write(
                 f"Not able to find any parts that match or are similar to part with part id: {part}"
             )
+            part_classes.update({part: "UNKNOWN"})
 
     json_object: str = json.dumps(part_classes, indent=4)
 
