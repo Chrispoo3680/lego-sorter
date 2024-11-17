@@ -10,7 +10,6 @@ sys.path.append(str(repo_root_dir))
 from common import tools
 import os
 import logging
-import kaggle
 import wget
 
 
@@ -31,6 +30,8 @@ def kaggle_download_data(
     # Set environment variables for Kaggle authentication
     os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
     os.environ["KAGGLE_KEY"] = config["kaggle_api"]
+
+    import kaggle
 
     # Download the lego piece dataset from kaggle.com
     kaggle.api.authenticate()
