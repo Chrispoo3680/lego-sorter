@@ -59,7 +59,9 @@ def api_scraper_download_data(
     logging_file_path: Path,
 ):
 
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
+    logger: logging.Logger = tools.create_logger(
+        log_path=logging_file_path, logger_name=__name__
+    )
 
     logger.info(
         f"Downloading files..."
@@ -87,25 +89,24 @@ if __name__ == "__main__":
     config = tools.load_config()
     save_path: Path = repo_root_dir / config["data_path"]
     log_path = Path("download.log")
-    """
+
     kaggle_download_data(
         data_handle=config["kaggle_dataset_handle"],
         save_path=save_path,
         data_name=config["kaggle_dataset_name"],
         logging_file_path=log_path,
     )
-    """
+
     api_scraper_download_data(
         download_url=config["scraper_dataset0_download"],
         save_path=save_path,
         data_name=config["scraper_dataset0_name"],
         logging_file_path=log_path,
     )
-    """
+
     api_scraper_download_data(
         download_url=config["scraper_dataset1_download"],
         save_path=save_path,
         data_name=config["scraper_dataset1_name"],
         logging_file_path=log_path,
     )
-    """

@@ -147,7 +147,9 @@ for root, dirs, _ in os.walk(data_path):
 
 
 # Creating file with part id classes if not already created
-part_ids = set([part for img_path in image_paths for part in os.listdir(img_path)])
+part_ids: list[str] = sorted(
+    set([part for img_path in image_paths for part in os.listdir(img_path)])
+)
 class_names: list[str] = []
 
 if "part_classes.json" in os.listdir(part_class_path):
