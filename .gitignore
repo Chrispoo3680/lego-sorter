@@ -2,7 +2,7 @@
 *.pyo
 __pycache__/
 
-.log
+*.log
 
 /data
 /models
