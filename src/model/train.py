@@ -151,16 +151,21 @@ part_ids = set([part for img_path in image_paths for part in os.listdir(img_path
 class_names: list[str] = []
 
 if "part_classes.json" in os.listdir(part_class_path):
-    with open(part_class_path, "r") as file:
-        classes_dict: dict = json.load(file)
-        for id in part_ids:
-            part_class = str(classes_dict[id])
-            if part_class not in class_names:
-                class_names.append(part_class)
+    logger.info(
+        f"'part_classes.json' is already in target directory. Assuming part classes is already created!"
+    )
 else:
     generate_lego_part_classes.get_part_classes(
         data_path=data_path, save_path=(part_class_path / "part_classes.json")
     )
+
+with open(part_class_path / "part_classes.json", "r") as file:
+    classes_dict: dict = json.load(file)
+    for id in part_ids:
+        part_class = str(classes_dict[id])
+        if part_class not in class_names:
+            class_names.append(part_class)
+class_names.sort()
 
 
 # Logging hyperparameters
