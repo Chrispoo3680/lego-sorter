@@ -4,13 +4,14 @@
 import sys
 from pathlib import Path
 
-repo_root_dir: Path = Path(__file__).parent.parent
+repo_root_dir: Path = Path(__file__).parent.parent.parent
 sys.path.append(str(repo_root_dir))
 
-from common import tools
+from src.common import tools
 import os
 import logging
 import wget
+from zipfile import ZipFile
 
 
 # To use the kaggle API you have to provide your username and a generated API key in the "kaggle_username" and "kaggle_api" variables in 'config.yaml'.
@@ -67,10 +68,17 @@ def api_scraper_download_data(
         f"\n    To path:  {save_path}"
     )
 
+    file_name: str = data_name + ".zip"
+
     # Create path if it doesn't exist
     os.makedirs(save_path, exist_ok=True)
-    download_dir = wget.download(download_url, out=save_path)
-    os.rename(save_path / download_dir, save_path / data_name)
+    download_dir = wget.download(download_url, out=str(save_path))
+    os.rename(save_path / download_dir, save_path / file_name)
+
+    with ZipFile(save_path / file_name, "r") as zipped:
+        zipped.extractall(path=(save_path / data_name))
+
+    os.remove(save_path / file_name)
 
     logger.info(f"Successfully downloaded dataset files from: {download_url}!")
 
@@ -79,7 +87,7 @@ if __name__ == "__main__":
     config = tools.load_config()
     save_path: Path = repo_root_dir / config["data_path"]
     log_path = Path("download.log")
-
+    """
     kaggle_download_data(
         data_handle=config["kaggle_dataset_handle"],
         save_path=save_path,
@@ -93,7 +101,7 @@ if __name__ == "__main__":
         data_name=config["scraper_dataset0_name"],
         logging_file_path=log_path,
     )
-
+    """
     api_scraper_download_data(
         download_url=config["scraper_dataset1_download"],
         save_path=save_path,

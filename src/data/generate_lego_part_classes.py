@@ -45,6 +45,8 @@ def part_class(part: str):
 
 def get_part_classes(data_path: Path, save_path: Path):
 
+    config = tools.load_config()
+
     # This is the API key from "rebrickable.com". It can be created in the profile settings under the API tab.
     # Provide it in the 'config.yaml' file.
     rebrick.init(config["rebrickable_api"])

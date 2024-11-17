@@ -109,13 +109,6 @@ if os.listdir(data_path):
         f"There already exists files in directory: {data_path}. Assuming datasets are already downloaded!"
     )
 else:
-    download.kaggle_download_data(
-        data_handle=config["kaggle_dataset_handle"],
-        save_path=data_path,
-        data_name=config["kaggle_dataset_name"],
-        logging_file_path=logging_file_path,
-    )
-
     download.api_scraper_download_data(
         download_url=config["scraper_dataset0_download"],
         save_path=data_path,
@@ -129,6 +122,14 @@ else:
         data_name=config["scraper_dataset1_name"],
         logging_file_path=logging_file_path,
     )
+
+    download.kaggle_download_data(
+        data_handle=config["kaggle_dataset_handle"],
+        save_path=data_path,
+        data_name=config["kaggle_dataset_name"],
+        logging_file_path=logging_file_path,
+    )
+
 
 # Finding all paths to image data in downloaded datasets
 image_paths: list[Path] = []
