@@ -152,7 +152,7 @@ class_names: list[str] = []
 
 if "part_classes.json" in os.listdir(part_class_path):
     logger.info(
-        f"'part_classes.json' is already in target directory. Assuming part classes is already created!"
+        f"'part_classes.json' is already in target directory. Assuming part classes are already created!"
     )
 else:
     generate_lego_part_classes.get_part_classes(
