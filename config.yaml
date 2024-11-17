@@ -23,6 +23,6 @@ results_path: results/
 logging_path: logs/
 
 # API KEYS
-rebrickable_api: 8b54992fcba5941f645017f463587c76 # Personal API key from "rebrickable.com" is needed.
+rebrickable_api: INSERT API KEY HERE # Personal API key from "rebrickable.com" is needed.
 kaggle_username: YOUR KAGGLE USERNAME # Instructions on how to get in "/src/data/download.py".
 kaggle_api: INSERT API KEY HERE # Instructions on how to get in "/src/data/download.py".
