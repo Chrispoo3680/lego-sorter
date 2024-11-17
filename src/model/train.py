@@ -59,28 +59,18 @@ config = tools.load_config()
 
 # Setup directories
 data_path: Path = repo_root_dir / config["data_path"]
-
-image_paths: list[Path] = []
-for root, dirs, _ in os.walk(data_path):
-    for dir_name in dirs:
-        folder_path: str = os.path.join(root, dir_name)
-        subfolder_contents: list[str] = os.listdir(folder_path)
-
-        if all(
-            os.path.isfile(os.path.join(folder_path, item))
-            for item in subfolder_contents
-        ):
-            image_paths.append(Path(root))
-            break
+os.makedirs(data_path, exist_ok=True)
 
 part_class_path: Path = repo_root_dir / "src" / "data"
 
 model_save_path: Path = repo_root_dir / config["model_path"]
+os.makedirs(model_save_path, exist_ok=True)
 model_save_name_version: str = utils.model_save_version(
     save_dir_path=model_save_path, save_name=MODEL_SAVE_NAME
 )
 
 results_save_path: Path = repo_root_dir / config["results_path"]
+os.makedirs(results_save_path, exist_ok=True)
 
 logging_dir_path: Path = repo_root_dir / config["logging_path"]
 os.makedirs(logging_dir_path, exist_ok=True)
@@ -139,6 +129,21 @@ else:
         data_name=config["scraper_dataset1_name"],
         logging_file_path=logging_file_path,
     )
+
+# Finding all paths to image data in downloaded datasets
+image_paths: list[Path] = []
+for root, dirs, _ in os.walk(data_path):
+    for dir_name in dirs:
+        folder_path: str = os.path.join(root, dir_name)
+        subfolder_contents: list[str] = os.listdir(folder_path)
+
+        if all(
+            os.path.isfile(os.path.join(folder_path, item))
+            for item in subfolder_contents
+        ):
+            image_paths.append(Path(root))
+            break
+
 
 # Creating file with part id classes if not already created
 part_ids = set([part for img_path in image_paths for part in os.listdir(img_path)])
@@ -261,8 +266,6 @@ utils.save_model(
 
 
 # Save training results
-os.makedirs(results_save_path, exist_ok=True)
-
 results_json = json.dumps(results, indent=4)
 
 with open(results_save_path / (model_save_name_version + "_results.json"), "w") as f:
