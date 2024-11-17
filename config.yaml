@@ -1,8 +1,17 @@
 # DATA
-data_link: https://www.kaggle.com/api/v1/datasets/download/ronanpickell/b200c-lego-classification-dataset
-data_handle: ronanpickell/b200c-lego-classification-dataset
-data_name: b200c-lego-classification-dataset
 data_path: data/
+
+kaggle_dataset_link: https://www.kaggle.com/datasets/ronanpickell/b200c-lego-classification-dataset
+kaggle_dataset_handle: ronanpickell/b200c-lego-classification-dataset
+kaggle_dataset_name: b200c-lego-classification-dataset
+
+scraper_dataset0_link: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0
+scraper_dataset0_download: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0/download
+scraper_dataset0_name: synthetic_and_real_mix_dataset
+
+scraper_dataset1_link: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0
+scraper_dataset1_download: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0/download
+scraper_dataset1_name: real_image_dataset
 
 # MODELS
 model_path: models/
@@ -14,6 +23,6 @@ results_path: results/
 logging_path: logs/
 
 # API KEYS
-rebrickable_api: INSERT API KEY HERE # Personal API key from "rebrickable.com" is needed.
+rebrickable_api: 8b54992fcba5941f645017f463587c76 # Personal API key from "rebrickable.com" is needed.
 kaggle_username: YOUR KAGGLE USERNAME # Instructions on how to get in "/src/data/download.py".
 kaggle_api: INSERT API KEY HERE # Instructions on how to get in "/src/data/download.py".

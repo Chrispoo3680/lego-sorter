@@ -19,7 +19,7 @@ def create_efficientnet_b0(class_names: list[str], device: torch.device):
     for param in efficientnet_b0.features.parameters():
         param.requires_grad = False
 
-    unfrozen_blocks: list[int] = [7, 8]
+    unfrozen_blocks: list[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
     for block in unfrozen_blocks:
         for param in efficientnet_b0.features[block].parameters():

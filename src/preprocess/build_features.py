@@ -7,23 +7,30 @@ import os
 from pathlib import Path
 
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, ConcatDataset
 
 
 NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
 
 
 def create_dataloaders(
-    data_dir_path: Path,
+    data_dir_path: list[Path],
     transform: transforms.Compose,
+    target_transform: transforms.Lambda,
     batch_size: int,
     num_workers: int = NUM_WORKERS,
 ):
 
-    # Make data folder into dataset
-    full_dataset = datasets.ImageFolder(
-        root=data_dir_path, transform=transform, target_transform=None
-    )
+    # Make data folders into dataset
+    independent_datasets: list[PartSortingDataset] = []
+    for path in data_dir_path:
+        independent_datasets.append(
+            PartSortingDataset(
+                root=path, transform=transform, target_transform=target_transform
+            )
+        )
+
+    full_dataset = ConcatDataset(independent_datasets)
 
     # Split into training and testing data (80% training, 20% testing)
     train_size = int(0.8 * len(full_dataset))
@@ -49,3 +56,24 @@ def create_dataloaders(
     )
 
     return train_dataloader, test_dataloader
+
+
+# Custom Dataset class for altering the labels of the dataset
+class PartSortingDataset(datasets.ImageFolder):
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        idx_to_class = {i: c for c, i in self.class_to_idx.items()}
+        path, target = self.samples[index]
+        sample = self.loader(path)
+        if self.transform is not None:
+            sample = self.transform(sample)
+        if self.target_transform is not None:
+            target = self.target_transform(idx_to_class[target])
+
+        return sample, target

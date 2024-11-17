@@ -19,7 +19,7 @@ from tqdm import tqdm
 import argparse
 import json
 
-from src.data import download
+from src.data import download, generate_lego_part_classes
 from src.common import utils, tools
 from src.preprocess import build_features
 import engine, model
@@ -59,7 +59,21 @@ config = tools.load_config()
 
 # Setup directories
 data_path: Path = repo_root_dir / config["data_path"]
-image_path: Path = data_path / config["data_name"]
+
+image_paths: list[Path] = []
+for root, dirs, _ in os.walk(data_path):
+    for dir_name in dirs:
+        folder_path: str = os.path.join(root, dir_name)
+        subfolder_contents: list[str] = os.listdir(folder_path)
+
+        if all(
+            os.path.isfile(os.path.join(folder_path, item))
+            for item in subfolder_contents
+        ):
+            image_paths.append(Path(root))
+            break
+
+part_class_path: Path = repo_root_dir / "src" / "data"
 
 model_save_path: Path = repo_root_dir / config["model_path"]
 model_save_name_version: str = utils.model_save_version(
@@ -100,18 +114,46 @@ else:
 
 
 # Download dataset if not already downloaded
-if os.path.isdir(image_path):
+if os.listdir(data_path):
     logger.info(
-        f"'{image_path}' directory exists. Assuming dataset is already downloaded!"
+        f"There already exists files in directory: {data_path}. Assuming datasets are already downloaded!"
     )
 else:
-    data_handle = config["data_handle"]
-    data_name = config["data_name"]
-    download.download_data(
-        data_handle=data_handle,
+    download.kaggle_download_data(
+        data_handle=config["kaggle_dataset_handle"],
         save_path=data_path,
-        data_name=data_name,
+        data_name=config["kaggle_dataset_name"],
         logging_file_path=logging_file_path,
+    )
+
+    download.api_scraper_download_data(
+        download_url=config["scraper_dataset0_download"],
+        save_path=data_path,
+        data_name=config["scraper_dataset0_name"],
+        logging_file_path=logging_file_path,
+    )
+
+    download.api_scraper_download_data(
+        download_url=config["scraper_dataset1_download"],
+        save_path=data_path,
+        data_name=config["scraper_dataset1_name"],
+        logging_file_path=logging_file_path,
+    )
+
+# Creating file with part id classes if not already created
+part_ids = set([part for img_path in image_paths for part in os.listdir(img_path)])
+class_names: list[str] = []
+
+if "part_classes.json" in os.listdir(part_class_path):
+    with open(part_class_path, "r") as file:
+        classes_dict: dict = json.load(file)
+        for id in part_ids:
+            part_class = str(classes_dict[id])
+            if part_class not in class_names:
+                class_names.append(part_class)
+else:
+    generate_lego_part_classes.get_part_classes(
+        data_path=data_path, save_path=(part_class_path / "part_classes.json")
     )
 
 
@@ -133,8 +175,6 @@ logger.info(f"Using device = {device}")
 
 
 # Create the machine learning model
-class_names: list[str] = os.listdir(image_path)
-
 logger.info("Loading model...")
 
 cnn_model, weights = model.create_efficientnet_b0(
@@ -169,12 +209,17 @@ manual_transforms = transforms.Compose(
     ]
 )
 
+target_transform = transforms.Lambda(lambda x: classes_dict[x])
+
 # Get transforms from the transfered model
 auto_transforms = weights.transforms()
 
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
-    data_dir_path=image_path, transform=auto_transforms, batch_size=BATCH_SIZE
+    data_dir_path=image_paths,
+    transform=auto_transforms,
+    target_transform=target_transform,
+    batch_size=BATCH_SIZE,
 )
 
 
