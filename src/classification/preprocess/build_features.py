@@ -9,7 +9,7 @@ from pathlib import Path
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 
-from typing import Any, List, Union
+from typing import Any, List, Union, Callable, Optional
 
 
 NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
@@ -18,7 +18,7 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 def create_dataloaders(
     data_dir_path: List[Path],
     transform: Union[transforms.Compose, Any],
-    target_transform: transforms.Lambda,
+    target_transform: Optional[Callable],
     batch_size: int,
     num_workers: int = NUM_WORKERS,
 ):
@@ -70,12 +70,15 @@ class PartSortingDataset(datasets.ImageFolder):
         Returns:
             tuple: (sample, target) where target is class_index of the target class.
         """
-        idx_to_class = {i: c for c, i in self.class_to_idx.items()}
+
+        class_to_idx = self.class_to_idx
+
         path, target = self.samples[index]
         sample = self.loader(path)
+
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
-            target = self.target_transform(idx_to_class[target])
+            target = self.target_transform(target, class_to_idx)
 
         return sample, target

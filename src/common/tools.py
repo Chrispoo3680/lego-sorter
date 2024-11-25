@@ -4,9 +4,13 @@ import logging
 import re
 
 import os
+import sys
 from pathlib import Path
 from zipfile import ZipFile
 import pandas as pd
+
+repo_root_dir: Path = Path(__file__).parent.parent.parent
+sys.path.append(str(repo_root_dir))
 
 
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
@@ -45,7 +49,7 @@ def create_logger(logger_name: str, log_path: Optional[Path] = None) -> logging.
 
 def load_config():
     # Read in the configuration file
-    with open("../../config.yaml") as p:
+    with open(repo_root_dir / "config.yaml") as p:
         config = yaml.safe_load(p)
     return config
 

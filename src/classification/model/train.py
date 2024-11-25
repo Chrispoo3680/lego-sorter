@@ -10,7 +10,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 import sys
 from pathlib import Path
 
-repo_root_dir: Path = Path(__file__).parent.parent.parent
+repo_root_dir: Path = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(repo_root_dir))
 
 import os
@@ -156,7 +156,7 @@ class_names: List[str] = []
 
 class_dict: Dict[str, int] = tools.part_cat_csv_to_dict(part_class_path)
 for id in part_ids:
-    part_class = str(class_dict[id])
+    part_class = str(tools.get_part_cat(part_id=id, id_to_cat=class_dict))
     if part_class not in class_names:
         class_names.append(part_class)
 class_names.sort()
@@ -216,11 +216,12 @@ manual_transform = transforms.Compose(
     ]
 )
 
-class_set = list(set(class_dict.values()))
-class_dict_idx = {
-    part: class_set.index(part_class) for part, part_class in class_dict.items()
-}
-target_transform = transforms.Lambda(lambda x: class_dict_idx[x])
+
+def target_transform(target, class_to_idx):
+    idx_to_class = {idx: _class for _class, idx in class_to_idx.items()}
+    # targets_copy["labels"] = [idx_to_class[label] for label in targets["labels"]]
+    transformed = tools.get_part_cat(idx_to_class[target], class_dict)
+    return transformed
 
 
 # Create train/test dataloader
