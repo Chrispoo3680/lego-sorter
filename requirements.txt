@@ -21,5 +21,4 @@ rebrick
 pillow
 argparse
 wget
-re
 xmltodict
