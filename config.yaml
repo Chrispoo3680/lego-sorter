@@ -1,17 +1,23 @@
 # DATA
 data_path: data/
 
-kaggle_dataset_link: https://www.kaggle.com/datasets/ronanpickell/b200c-lego-classification-dataset
-kaggle_dataset_handle: ronanpickell/b200c-lego-classification-dataset
-kaggle_dataset_name: b200c-lego-classification-dataset
+# CLASSIFICATION DATASETS
+b200c_dataset_link: https://www.kaggle.com/datasets/ronanpickell/b200c-lego-classification-dataset
+b200c_dataset_handle: ronanpickell/b200c-lego-classification-dataset
+b200c_dataset_name: b200c-lego-classification-dataset
 
-scraper_dataset0_link: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0
-scraper_dataset0_download: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0/download
-scraper_dataset0_name: synthetic_and_real_mix_dataset
+class_scraper_dataset0_link: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0
+class_scraper_dataset0_download: https://mostwiedzy.pl/en/open-research-data/lego-bricks-for-training-classification-network,202309140842198941751-0/download
+class_scraper_dataset0_name: synthetic_and_real_mix_dataset
 
-scraper_dataset1_link: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0
-scraper_dataset1_download: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0/download
-scraper_dataset1_name: real_image_dataset
+class_scraper_dataset1_link: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0
+class_scraper_dataset1_download: https://mostwiedzy.pl/en/open-research-data/images-of-lego-bricks,202309140837142278781-0/download
+class_scraper_dataset1_name: real_image_dataset
+
+# OBJECT DETECTION DATASETS
+b200_dataset_link: https://www.kaggle.com/datasets/ronanpickell/b100-lego-detection-dataset
+b200_kaggle_dataset_handle: ronanpickell/b100-lego-detection-dataset
+b200_kaggle_dataset_name: b200-lego-detection-dataset
 
 # MODELS
 model_path: models/
