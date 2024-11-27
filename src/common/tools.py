@@ -65,27 +65,32 @@ def rename_and_unzip_file(
 
 def get_part_cat(part_id: str, id_to_cat: Dict[str, int]) -> int:
 
-    logger: logging.Logger = create_logger(logger_name=__name__)
+    # Predefine possible suffixes
+    possible_letters = ["", "a", "b", "c"]
 
-    split_config = re.compile("([0-9]+)([a-zA-Z]+)")
-    possible_letters: list[str] = ["", "a", "b", "c"]
+    # Split the part ID into slices
+    part_slices = part_id.split("_")
 
-    for part_slice in part_id.split("_"):
-        part_num, part_letter = (part_slice, "") if split_config.match(part_slice) is None else split_config.match(part_slice).groups()  # type: ignore
-        for letter in [part_letter] + [
-            let for let in possible_letters if let != part_letter
-        ]:  # If part id is not found, try to alter the part id to match with the right one
-            try:
-                part_cat_id: int = id_to_cat[part_num + letter]
-                return part_cat_id
+    for part_slice in part_slices:
+        # Extract the numeric part and suffix
+        part_num, part_letter = (
+            (part_slice[:-1], part_slice[-1])
+            if part_slice[-1] in possible_letters
+            else (part_slice, "")
+        )
 
-            except KeyError as err:
-                # logger.warning(
-                #    f"Part with id: {part_slice} was not recognised.\n{err}\n"
-                # )
-                pass
+        # Generate possible part IDs to check
+        candidate_ids = [
+            part_num + letter
+            for letter in [part_letter]
+            + [l for l in possible_letters if l != part_letter]
+        ]
 
-    logger.error(f"Couldn't find any part categories for part with id: {part_id}\n\n")
+        for candidate_id in candidate_ids:
+            if candidate_id in id_to_cat:
+                return id_to_cat[candidate_id]
+
+    logging.error(f"Couldn't find any part categories for part with id: {part_id}\n\n")
     return 0
 
 

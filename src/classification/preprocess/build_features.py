@@ -60,8 +60,59 @@ def create_dataloaders(
     return train_dataloader, test_dataloader
 
 
+IMG_EXTENSIONS = (
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".ppm",
+    ".bmp",
+    ".pgm",
+    ".tif",
+    ".tiff",
+    ".webp",
+)
+
+
 # Custom Dataset class for altering the labels of the dataset
-class PartSortingDataset(datasets.ImageFolder):
+class PartSortingDataset(datasets.DatasetFolder):
+    def __init__(
+        self,
+        root: Union[str, Path],
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = datasets.folder.default_loader,
+        is_valid_file: Optional[Callable[[str], bool]] = None,
+        allow_empty: bool = False,
+    ):
+        super().__init__(
+            root,
+            loader,
+            IMG_EXTENSIONS if is_valid_file is None else None,
+            transform=transform,
+            target_transform=target_transform,
+            is_valid_file=is_valid_file,
+            allow_empty=allow_empty,
+        )
+        self.imgs = self.samples
+
+        if self.target_transform is not None:
+            transformed_classes = set(
+                sorted(self.target_transform(_class) for _class in self.classes)
+            )
+            transformed_to_idx = {
+                transformed: idx for idx, transformed in enumerate(transformed_classes)
+            }
+            target_to_transformed = {
+                self.class_to_idx[target]: transformed_to_idx[
+                    self.target_transform(target)
+                ]
+                for target in self.classes
+            }
+
+            self.transformed_classes = transformed_classes
+            self.transformed_to_idx = transformed_to_idx
+            self.target_to_transformed = target_to_transformed
+
     def __getitem__(self, index):
         """
         Args:
@@ -72,6 +123,7 @@ class PartSortingDataset(datasets.ImageFolder):
         """
 
         class_to_idx = self.class_to_idx
+        target_to_transformed = self.target_to_transformed
 
         path, target = self.samples[index]
         sample = self.loader(path)
@@ -79,6 +131,9 @@ class PartSortingDataset(datasets.ImageFolder):
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
-            target = self.target_transform(target, class_to_idx)
+            target = target_to_transformed[target]
 
         return sample, target
+
+    def __len__(self) -> int:
+        return len(self.imgs)

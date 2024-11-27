@@ -33,6 +33,7 @@ parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
+parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
 parser.add_argument(
     "--model_save_name",
     type=str,
@@ -51,6 +52,7 @@ args = parser.parse_args()
 NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
+WEIGHT_DECAY = args.weight_decay
 MODEL_SAVE_NAME = args.model_save_name
 EXPERIMENT_NAME = args.experiment_name
 EXPERIMENT_VARIABLE = args.experiment_variable
@@ -60,7 +62,7 @@ config = tools.load_config()
 
 
 # Setup directories
-data_path: Path = repo_root_dir / config["data_path"]
+data_path: Path = repo_root_dir / config["data_path"] / "classification"
 os.makedirs(data_path, exist_ok=True)
 
 part_class_path: Path = repo_root_dir / "src" / "data" / "parts.csv"
@@ -204,6 +206,7 @@ logger.info(
     f"Successfully loaded model: {cnn_model.__class__.__name__}"
     f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
     f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
+    f"\n    Image transforms: {auto_transform}"
 )
 
 
@@ -217,11 +220,8 @@ manual_transform = transforms.Compose(
 )
 
 
-def target_transform(target, class_to_idx):
-    idx_to_class = {idx: _class for _class, idx in class_to_idx.items()}
-    # targets_copy["labels"] = [idx_to_class[label] for label in targets["labels"]]
-    transformed = tools.get_part_cat(idx_to_class[target], class_dict)
-    return transformed
+def target_transform(target):
+    return tools.get_part_cat(target, class_dict)
 
 
 # Create train/test dataloader
@@ -236,7 +236,9 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 # Set loss, optimizer and learning rate scheduling
 loss_fn = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(
+    cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
+)
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
     optimizer, milestones=[11, 21, 31, 41], gamma=0.1
 )

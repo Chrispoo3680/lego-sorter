@@ -26,7 +26,9 @@ def train_step(
 
     train_loss, train_acc = 0, 0
 
-    for batch, (X, y) in enumerate(dataloader):
+    for batch, (X, y) in enumerate(
+        tqdm(dataloader, position=0, leave=True, desc="Iterating through batches.")
+    ):
         X, y = X.to(device), y.to(device)
 
         y_pred = model(X)
@@ -106,7 +108,9 @@ def train(
         "test_acc": [],
     }
 
-    for epoch in tqdm(range(epochs), position=0, leave=True):
+    for epoch in tqdm(
+        range(epochs), position=0, leave=True, desc="Iterating through epochs."
+    ):
         train_loss, train_acc = train_step(
             model=model,
             dataloader=train_dataloader,

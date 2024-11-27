@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -75,8 +75,8 @@ def pred_image(
 # Predict on a target image with a target model
 def pred_and_plot_image(
     model: torch.nn.Module,
-    class_names: List[str],
-    image_path: Path | str,
+    class_names: List[int],
+    image_path: Union[Path, str],
     image_size: Tuple[int, int] = (224, 224),
     transform: transforms.Compose | None = None,
     device: torch.device = device,
