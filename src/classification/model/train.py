@@ -4,7 +4,7 @@ This is a file for training the lego classifier model. This file have to be run 
 
 import torch
 from torch import nn
-from torchvision import transforms
+from torchvision.transforms import v2
 from torch.utils.tensorboard.writer import SummaryWriter
 
 import sys
@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
-parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
+parser.add_argument("--weight_decay", type=float, default=0.00001, help="Weight decay")
 parser.add_argument(
     "--model_save_name",
     type=str,
@@ -170,6 +170,7 @@ logger.info(
     f"\n    num_epochs = {NUM_EPOCHS}"
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
+    f"\n    weight_decay = {WEIGHT_DECAY}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
     f"\n    experiment_name = {EXPERIMENT_VARIABLE}"
@@ -184,7 +185,7 @@ logger.info(f"Using device = {device}")
 # Create the machine learning model
 logger.info("Loading model...")
 
-cnn_model, auto_transform = model.timm_create_model(
+cnn_model, auto_tramsform = model.timm_create_model(
     model_name="tf_efficientnet_b0",
     class_names=class_names,
     device=device,
@@ -202,32 +203,36 @@ unfrozen_blocks: List[str] = [
     if all([parameter.requires_grad for parameter in block.parameters()])
 ]
 
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-    f"\n    Image transforms: {auto_transform}"
-)
-
 
 # Create a manual transform for the images if it is wanted to use that
-manual_transform = transforms.Compose(
+manual_transform = v2.Compose(
     [
-        transforms.Resize(size=(224, 224)),
-        transforms.TrivialAugmentWide(num_magnitude_bins=16),
-        transforms.ToTensor(),
+        v2.Resize(size=(224, 224)),
+        v2.TrivialAugmentWide(num_magnitude_bins=16),
+        v2.RandomHorizontalFlip(p=0.5),
+        v2.RandomResizedCrop(size=(224, 224), antialias=True),
+        v2.ToTensor(),
     ]
 )
+
+image_transform = auto_tramsform
 
 
 def target_transform(target):
     return tools.get_part_cat(target, class_dict)
 
 
+logger.info(
+    f"Successfully loaded model: {cnn_model.__class__.__name__}"
+    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
+    f"\n    Image transforms:\n        {image_transform}"
+)
+
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
-    transform=auto_transform,
+    transform=image_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
 )
