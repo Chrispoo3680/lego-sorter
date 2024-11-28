@@ -8,7 +8,7 @@ from pathlib import Path
 
 from torchvision import datasets
 from torchvision.transforms import v2
-from torch.utils.data import DataLoader, random_split, ConcatDataset
+from torch.utils.data import DataLoader, random_split, ConcatDataset, Dataset
 
 from typing import Any, List, Dict, Union, Callable, Optional
 
@@ -24,6 +24,12 @@ def create_dataloaders(
     num_workers: int = NUM_WORKERS,
 ):
 
+    if transform is None:
+        train_transform = test_transform = None
+    else:
+        train_transform = transform["train"]
+        test_transform = transform["test"]
+
     # Make data folders into dataset
     independent_datasets: List[PartSortingDataset] = []
     for path in data_dir_path:
@@ -37,11 +43,10 @@ def create_dataloaders(
     train_size = int(0.8 * len(full_dataset))
     test_size = len(full_dataset) - train_size
 
-    train_data, test_data = random_split(full_dataset, [train_size, test_size])
+    train_set, test_set = random_split(full_dataset, [train_size, test_size])
 
-    if transform is not None:
-        train_data.dataset.transform = transform["train"]  # type: ignore
-        test_data.dataset.transform = transform["test"]  # type: ignore
+    train_data = DatasetFromSubset(train_set, train_transform)
+    test_data = DatasetFromSubset(test_set, test_transform)
 
     # Make dataset into dataloader
     train_dataloader = DataLoader(
@@ -140,3 +145,19 @@ class PartSortingDataset(datasets.DatasetFolder):
 
     def __len__(self) -> int:
         return len(self.imgs)
+
+
+# Dataset class for turning subsets into datasets with transforms
+class DatasetFromSubset(Dataset):
+    def __init__(self, subset, transform=None):
+        self.subset = subset
+        self.transform = transform
+
+    def __getitem__(self, index):
+        sample, target = self.subset[index]
+        if self.transform:
+            sample = self.transform(sample)
+        return sample, target
+
+    def __len__(self):
+        return len(self.subset)
