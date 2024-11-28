@@ -6,10 +6,11 @@ image classification data.
 import os
 from pathlib import Path
 
-from torchvision import datasets, transforms
+from torchvision import datasets
+from torchvision.transforms import v2
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 
-from typing import Any, List, Union, Callable, Optional
+from typing import Any, List, Dict, Union, Callable, Optional
 
 
 NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
@@ -17,9 +18,9 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 
 def create_dataloaders(
     data_dir_path: List[Path],
-    transform: Union[transforms.Compose, Any],
-    target_transform: Optional[Callable],
     batch_size: int,
+    transform: Union[Dict[str, v2.Compose], None] = None,
+    target_transform: Union[Optional[Callable], None] = None,
     num_workers: int = NUM_WORKERS,
 ):
 
@@ -27,9 +28,7 @@ def create_dataloaders(
     independent_datasets: List[PartSortingDataset] = []
     for path in data_dir_path:
         independent_datasets.append(
-            PartSortingDataset(
-                root=path, transform=transform, target_transform=target_transform
-            )
+            PartSortingDataset(root=path, target_transform=target_transform)
         )
 
     full_dataset = ConcatDataset(independent_datasets)
@@ -39,6 +38,10 @@ def create_dataloaders(
     test_size = len(full_dataset) - train_size
 
     train_data, test_data = random_split(full_dataset, [train_size, test_size])
+
+    if transform is not None:
+        train_data.dataset.transform = transform["train"]  # type: ignore
+        test_data.dataset.transform = transform["test"]  # type: ignore
 
     # Make dataset into dataloader
     train_dataloader = DataLoader(

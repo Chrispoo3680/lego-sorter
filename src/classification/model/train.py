@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
-parser.add_argument("--weight_decay", type=float, default=0.00001, help="Weight decay")
+parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
 parser.add_argument(
     "--model_save_name",
     type=str,
@@ -203,32 +203,49 @@ unfrozen_blocks: List[str] = [
     if all([parameter.requires_grad for parameter in block.parameters()])
 ]
 
-
-# Create a manual transform for the images if it is wanted to use that
-manual_transform = v2.Compose(
-    [
-        v2.Resize(size=(224, 224)),
-        v2.TrivialAugmentWide(num_magnitude_bins=16),
-        v2.RandomHorizontalFlip(p=0.5),
-        v2.RandomResizedCrop(size=(224, 224), antialias=True),
-        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        v2.ToTensor(),
-    ]
+logger.info(
+    f"Successfully loaded model: {cnn_model.__class__.__name__}"
+    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
 )
 
-image_transform = auto_tramsform
+
+# Create a manual transform for the images if it is wanted to use that
+image_transform: Dict[str, v2.Compose] = {
+    "train": v2.Compose(
+        [
+            v2.AutoAugment(),
+            v2.Resize(
+                size=(256, 256),
+                interpolation=v2.InterpolationMode.BICUBIC,
+                max_size=None,
+                antialias=True,
+            ),
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomResizedCrop(size=(224, 224), antialias=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            v2.ToTensor(),
+        ]
+    ),
+    "test": v2.Compose(
+        [
+            v2.Resize(
+                size=(256, 256),
+                interpolation=v2.InterpolationMode.BICUBIC,
+                max_size=None,
+                antialias=True,
+            ),
+            v2.CenterCrop(size=(224, 224)),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            v2.ToTensor(),
+        ]
+    ),
+}
 
 
 def target_transform(target):
     return tools.get_part_cat(target, class_dict)
 
-
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-    f"\n    Image transforms:\n        {image_transform}"
-)
 
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
