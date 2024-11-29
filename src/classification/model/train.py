@@ -34,16 +34,21 @@ parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
-parser.add_argument(
-    "--model_save_name",
-    type=str,
-    default="efficientnet_b0_lego_sorter",
-    help="Model save name",
-)
+parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
     "--experiment_variable", type=str, default=None, help="Experiment variable"
 )
+
+args, remaining = parser.parse_known_args()
+
+parser.add_argument(
+    "--model_save_name",
+    type=str,
+    default=args.model_name + "_lego_classifier",
+    help="Model save name",
+)
+
 
 args = parser.parse_args()
 
@@ -53,6 +58,7 @@ NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
+MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
 EXPERIMENT_NAME = args.experiment_name
 EXPERIMENT_VARIABLE = args.experiment_variable
@@ -171,6 +177,7 @@ logger.info(
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    weight_decay = {WEIGHT_DECAY}"
+    f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
     f"\n    experiment_name = {EXPERIMENT_VARIABLE}"
@@ -186,7 +193,7 @@ logger.info(f"Using device = {device}")
 logger.info("Loading model...")
 
 cnn_model, auto_transform = model.timm_create_model(
-    model_name="efficientnet_b0",
+    model_name=MODEL_NAME,
     class_names=class_names,
     device=device,
     pretrained=True,

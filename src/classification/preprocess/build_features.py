@@ -6,8 +6,7 @@ image classification data.
 import os
 from pathlib import Path
 
-from torchvision import datasets
-from torchvision.transforms import v2
+from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, ConcatDataset, Dataset
 
 from typing import Any, List, Dict, Union, Callable, Optional
@@ -19,24 +18,18 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 def create_dataloaders(
     data_dir_path: List[Path],
     batch_size: int,
-    transform: Union[Dict[str, Union[v2.Compose, Any]], v2.Compose, Any] = None,
+    transform: Union[transforms.Compose, Any] = None,
     target_transform: Union[Optional[Callable], None] = None,
     num_workers: int = NUM_WORKERS,
 ):
-
-    if transform is None:
-        train_transform = test_transform = None
-    elif isinstance(transform, dict):
-        train_transform = transform["train"]
-        test_transform = transform["test"]
-    else:
-        train_transform = test_transform = transform
 
     # Make data folders into dataset
     independent_datasets: List[PartSortingDataset] = []
     for path in data_dir_path:
         independent_datasets.append(
-            PartSortingDataset(root=path, target_transform=target_transform)
+            PartSortingDataset(
+                root=path, transform=transform, target_transform=target_transform
+            )
         )
 
     full_dataset = ConcatDataset(independent_datasets)
@@ -45,10 +38,7 @@ def create_dataloaders(
     train_size = int(0.8 * len(full_dataset))
     test_size = len(full_dataset) - train_size
 
-    train_set, test_set = random_split(full_dataset, [train_size, test_size])
-
-    train_data = DatasetFromSubset(train_set, train_transform)
-    test_data = DatasetFromSubset(test_set, test_transform)
+    train_data, test_data = random_split(full_dataset, [train_size, test_size])
 
     # Make dataset into dataloader
     train_dataloader = DataLoader(
