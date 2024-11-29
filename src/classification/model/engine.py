@@ -130,7 +130,8 @@ def train(
             f"train_acc: {train_acc:.4f}  |  "
             f"test_loss: {test_loss:.4f}  |  "
             f"test_acc: {test_acc:.4f}  |  "
-            f"learning_rate: {optimizer.param_groups[0]['lr']}"
+            f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
+            f"early stopping counter: {early_stopping.counter}"
         )
 
         results["learning_rate"].append(optimizer.param_groups[0]["lr"])

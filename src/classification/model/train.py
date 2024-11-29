@@ -203,6 +203,12 @@ unfrozen_blocks: List[str] = [
     if all([parameter.requires_grad for parameter in block.parameters()])
 ]
 
+logger.info(
+    f"Successfully loaded model: {cnn_model.__class__.__name__}"
+    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
+)
+
 
 # Create a manual transform for the images if it is wanted to use that
 manual_transform: Dict[str, v2.Compose] = {
@@ -239,13 +245,6 @@ manual_transform: Dict[str, v2.Compose] = {
 
 image_transform = auto_transform
 
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-    f"\n    Image transform: \n         {image_transform}"
-)
-
 
 def target_transform(target):
     return tools.get_part_cat(target, class_dict)
@@ -254,9 +253,15 @@ def target_transform(target):
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
-    transform=manual_transform,
+    transform=image_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
+)
+
+logger.info(
+    f"Successfully created dataloaders with transforms:"
+    f"\n    Train dataloader transform: {train_dataloader.dataset.transform}"  # type: ignore
+    f"\n    Test dataloader transform: {test_dataloader.dataset.transform}"  # type: ignore
 )
 
 

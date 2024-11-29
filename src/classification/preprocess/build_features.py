@@ -19,7 +19,7 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 def create_dataloaders(
     data_dir_path: List[Path],
     batch_size: int,
-    transform: Union[Dict[str, v2.Compose], Any, None] = None,
+    transform: Union[Dict[str, Union[v2.Compose, Any]], v2.Compose, Any] = None,
     target_transform: Union[Optional[Callable], None] = None,
     num_workers: int = NUM_WORKERS,
 ):
