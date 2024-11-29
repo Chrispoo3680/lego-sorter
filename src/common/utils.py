@@ -14,30 +14,35 @@ from typing import List
 
 
 class EarlyStopping:
-    def __init__(self, patience: int, min_delta: float):
+    def __init__(self, patience: int = 5, delta: float = 0):
         """
         Args:
             patience (int): How many epochs to wait after the last improvement.
             min_delta (float): Minimum change to qualify as an improvement.
         """
         self.patience = patience
-        self.min_delta = min_delta
-        self.counter = 0
+        self.delta = delta
         self.best_score = None
         self.early_stop = False
+        self.counter = 0
+        self.best_model_state = None
 
-    def __call__(self, val_loss):
-        # If first validation loss, set it as best_score
+    def __call__(self, val_loss, model):
+        score = val_loss
         if self.best_score is None:
-            self.best_score = val_loss
-        # Check if there’s an improvement
-        elif val_loss < self.best_score - self.min_delta:
-            self.best_score = val_loss
-            self.counter = 0  # Reset patience counter
-        else:
+            self.best_score = score
+            self.best_model_state = model.state_dict()
+        elif score < self.best_score + self.delta:
             self.counter += 1
             if self.counter >= self.patience:
                 self.early_stop = True
+        else:
+            self.best_score = score
+            self.best_model_state = model.state_dict()
+            self.counter = 0
+
+    def load_best_model(self, model):
+        model.load_state_dict(self.best_model_state)
 
 
 def save_model(

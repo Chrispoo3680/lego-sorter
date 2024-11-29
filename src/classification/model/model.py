@@ -20,27 +20,18 @@ def timm_create_model(
     frozen_blocks: List[int] = [],
 ):
 
+    # Get the output and input shapes for the classifier
+    output_shape: int = len(class_names)
+
     # Getting model architecture from timm
-    model = timm.create_model(model_name=model_name, pretrained=pretrained).to(device)
+    model = timm.create_model(
+        model_name=model_name, pretrained=pretrained, num_classes=output_shape
+    ).to(device)
 
     # Freeze given blocks in the 'features' section of the model
     for idx in frozen_blocks:
         for param in model.blocks[idx].parameters():
             param.requires_grad = False
-
-    # Get the output and input shapes for the classifier
-    output_shape: int = len(class_names)
-    input_shape = model.classifier.in_features
-
-    # Recreate the classifier layer and seed it to the target device
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.2, inplace=True),
-        nn.Linear(
-            in_features=input_shape,
-            out_features=output_shape,
-            bias=True,
-        ),
-    ).to(device)
 
     img_transform = timm.data.transforms_factory.create_transform(
         **timm.data.resolve_data_config(model.pretrained_cfg, model=model)

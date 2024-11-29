@@ -185,8 +185,8 @@ logger.info(f"Using device = {device}")
 # Create the machine learning model
 logger.info("Loading model...")
 
-cnn_model, auto_tramsform = model.timm_create_model(
-    model_name="tf_efficientnet_b0",
+cnn_model, auto_transform = model.timm_create_model(
+    model_name="efficientnet_b0",
     class_names=class_names,
     device=device,
     pretrained=True,
@@ -203,18 +203,13 @@ unfrozen_blocks: List[str] = [
     if all([parameter.requires_grad for parameter in block.parameters()])
 ]
 
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-)
-
 
 # Create a manual transform for the images if it is wanted to use that
-image_transform: Dict[str, v2.Compose] = {
+manual_transform: Dict[str, v2.Compose] = {
     "train": v2.Compose(
         [
-            v2.AutoAugment(),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
             v2.Resize(
                 size=(256, 256),
                 interpolation=v2.InterpolationMode.BICUBIC,
@@ -224,12 +219,12 @@ image_transform: Dict[str, v2.Compose] = {
             v2.RandomHorizontalFlip(p=0.5),
             v2.RandomResizedCrop(size=(224, 224), antialias=True),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            v2.ToImage(),
-            v2.ToDtype(torch.float32, scale=True),
         ]
     ),
     "test": v2.Compose(
         [
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
             v2.Resize(
                 size=(256, 256),
                 interpolation=v2.InterpolationMode.BICUBIC,
@@ -238,11 +233,18 @@ image_transform: Dict[str, v2.Compose] = {
             ),
             v2.CenterCrop(size=(224, 224)),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            v2.ToImage(),
-            v2.ToDtype(torch.float32, scale=True),
         ]
     ),
 }
+
+image_transform = auto_transform
+
+logger.info(
+    f"Successfully loaded model: {cnn_model.__class__.__name__}"
+    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
+    f"\n    Image transform: \n         {image_transform}"
+)
 
 
 def target_transform(target):
@@ -252,7 +254,7 @@ def target_transform(target):
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
-    transform=image_transform,
+    transform=manual_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
 )
@@ -264,6 +266,7 @@ loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(
     cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
+
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
     optimizer, milestones=[11, 21, 31, 41], gamma=0.1
 )
@@ -271,7 +274,7 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=3, min_delta=0.001)
+early_stopping = utils.EarlyStopping(patience=5, delta=0.01)
 
 results = engine.train(
     model=cnn_model,
