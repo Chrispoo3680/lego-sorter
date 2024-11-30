@@ -34,7 +34,7 @@ class EarlyStopping:
             self.best_score = score
             self.best_score_epoch = epoch
             self.best_model_state = model.state_dict()
-        elif score < self.best_score - self.delta:
+        elif score > self.best_score - self.delta:
             self.counter += 1
             if self.counter >= self.patience:
                 self.early_stop = True

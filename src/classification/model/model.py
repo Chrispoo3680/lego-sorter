@@ -20,9 +20,12 @@ def timm_create_model(
     frozen_blocks: List[int] = [],
 ):
 
+    # Get the output and input shapes for the classifier
+    output_shape: int = len(class_names)
+
     # Getting model architecture from timm
     model = timm.create_model(
-        model_name=model_name, pretrained=pretrained, class_names=class_names
+        model_name=model_name, pretrained=pretrained, num_classes=output_shape
     ).to(device)
 
     # Freeze given blocks in the 'features' section of the model

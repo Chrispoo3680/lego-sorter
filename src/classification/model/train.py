@@ -70,7 +70,7 @@ NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
-FROZEN_BLOCKS = args.frozen_layers.split(",")
+FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
 PRETRAINED = args.pretrained
 MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
@@ -280,12 +280,6 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
     transform=image_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
-)
-
-logger.info(
-    f"Successfully created dataloaders with transforms:"
-    f"\n    Train dataloader transform: {train_dataloader.dataset.transform}"  # type: ignore
-    f"\n    Test dataloader transform: {test_dataloader.dataset.transform}"  # type: ignore
 )
 
 

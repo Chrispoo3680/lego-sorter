@@ -6,6 +6,7 @@ image classification data.
 import os
 from pathlib import Path
 
+import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, ConcatDataset, Dataset
 
@@ -38,7 +39,9 @@ def create_dataloaders(
     train_size = int(0.8 * len(full_dataset))
     test_size = len(full_dataset) - train_size
 
-    train_data, test_data = random_split(full_dataset, [train_size, test_size])
+    train_data, test_data = random_split(
+        full_dataset, [train_size, test_size], torch.manual_seed(0)
+    )
 
     # Make dataset into dataloader
     train_dataloader = DataLoader(
