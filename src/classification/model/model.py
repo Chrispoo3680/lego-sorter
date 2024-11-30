@@ -20,16 +20,15 @@ def timm_create_model(
     frozen_blocks: List[int] = [],
 ):
 
-    # Get the output and input shapes for the classifier
-    output_shape: int = len(class_names)
-
     # Getting model architecture from timm
     model = timm.create_model(
-        model_name=model_name, pretrained=pretrained, num_classes=output_shape
+        model_name=model_name, pretrained=pretrained, class_names=class_names
     ).to(device)
 
     # Freeze given blocks in the 'features' section of the model
     for idx in frozen_blocks:
+        if idx not in range(len(model.blocks)):
+            break
         for param in model.blocks[idx].parameters():
             param.requires_grad = False
 

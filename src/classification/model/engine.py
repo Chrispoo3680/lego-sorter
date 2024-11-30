@@ -161,11 +161,15 @@ def train(
             writer.close()
 
         # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
-        early_stopping(test_loss, model)
+        early_stopping(test_loss, model, epoch)
         if early_stopping.early_stop:
             logger.info(
-                f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}, and saving model with lowest loss."
+                f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"
             )
+            logger.info(
+                f"Saving model with lowest loss from epoch: {early_stopping.best_score_epoch}"
+            )
+
             break
 
     return results

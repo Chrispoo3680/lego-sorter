@@ -34,6 +34,18 @@ parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
+parser.add_argument(
+    "--frozen_blocks",
+    type=str,
+    default="",
+    help="Number of blocks to be frozen on format 'block1,block2,block3'",
+)
+parser.add_argument(
+    "--pretrained",
+    type=bool,
+    default=True,
+    help="If model should use pretrained weights",
+)
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
@@ -58,6 +70,8 @@ NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
+FROZEN_BLOCKS = args.frozen_layers.split(",")
+PRETRAINED = args.pretrained
 MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
 EXPERIMENT_NAME = args.experiment_name
@@ -177,6 +191,8 @@ logger.info(
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    weight_decay = {WEIGHT_DECAY}"
+    f"\n    frozen_blocks = {FROZEN_BLOCKS}"
+    f"\n    pretrained = {PRETRAINED}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
@@ -196,7 +212,8 @@ cnn_model, auto_transform = model.timm_create_model(
     model_name=MODEL_NAME,
     class_names=class_names,
     device=device,
-    pretrained=True,
+    pretrained=PRETRAINED,
+    frozen_blocks=FROZEN_BLOCKS,
 )
 
 frozen_blocks: List[str] = [
@@ -286,7 +303,7 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=5, delta=0.01)
+early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
 
 results = engine.train(
     model=cnn_model,
