@@ -7,6 +7,7 @@ from torch import nn
 from torchvision.transforms import v2
 from torchvision import transforms
 from torch.utils.tensorboard.writer import SummaryWriter
+from torch.amp.grad_scaler import GradScaler
 
 import sys
 from pathlib import Path
@@ -321,6 +322,9 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 logger.info("Starting training...\n")
 early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
 
+# Set up scaler for better efficiency
+scaler = GradScaler()
+
 results = engine.train(
     model=cnn_model,
     train_dataloader=train_dataloader,
@@ -333,6 +337,7 @@ results = engine.train(
     logging_file_path=logging_file_path,
     writer=writer,
     early_stopping=early_stopping,
+    scaler=scaler,
 )
 
 
