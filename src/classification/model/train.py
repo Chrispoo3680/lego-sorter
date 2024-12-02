@@ -196,6 +196,7 @@ logger.info(
     f"\n    weight_decay = {WEIGHT_DECAY}"
     f"\n    frozen_blocks = {FROZEN_BLOCKS}"
     f"\n    pretrained = {PRETRAINED}"
+    f"\n    image_size = {IMAGE_SIZE}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
