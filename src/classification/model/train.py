@@ -48,6 +48,12 @@ parser.add_argument(
     help="If model should use pretrained weights",
 )
 parser.add_argument("--image_size", type=int, default=None, help="Image size")
+parser.add_argument(
+    "--checkpoint_path",
+    type=str,
+    default="",
+    help="Path to checkpoint used to initialize model weights",
+)
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
@@ -74,6 +80,7 @@ LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
 FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
 PRETRAINED = args.pretrained
+CHECKPOINT_PATH = args.checkpoint_path
 IMAGE_SIZE = args.image_size
 MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
@@ -196,6 +203,7 @@ logger.info(
     f"\n    weight_decay = {WEIGHT_DECAY}"
     f"\n    frozen_blocks = {FROZEN_BLOCKS}"
     f"\n    pretrained = {PRETRAINED}"
+    f"\n    checkpoint_path = {CHECKPOINT_PATH}"
     f"\n    image_size = {IMAGE_SIZE}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
@@ -217,6 +225,7 @@ cnn_model, auto_transform = model.get_timm_model(
     num_classes=len(class_names),
     device=device,
     pretrained=PRETRAINED,
+    checkpoint_path=CHECKPOINT_PATH,
     frozen_blocks=FROZEN_BLOCKS,
 )
 
