@@ -9,23 +9,29 @@ from torchvision import models
 import timm
 import timm.data
 
-from typing import List
+from typing import List, Union
 
 
-def timm_create_model(
+def get_timm_model(
     model_name: str,
-    class_names: List[str],
+    num_classes: int,
     device: torch.device,
     pretrained: bool = False,
+    checkpoint_path: str = "",
     frozen_blocks: List[int] = [],
 ):
 
-    # Get the output and input shapes for the classifier
-    output_shape: int = len(class_names)
+    if model_name not in timm.list_models(""):
+        raise KeyError(
+            "Model name is not valid! Must be a model from timm.list_models('*efficientnet*'). "
+        )
 
     # Getting model architecture from timm
     model = timm.create_model(
-        model_name=model_name, pretrained=pretrained, num_classes=output_shape
+        model_name=model_name,
+        pretrained=pretrained,
+        num_classes=num_classes,
+        checkpoint_path=checkpoint_path,
     ).to(device)
 
     # Freeze given blocks in the 'features' section of the model
@@ -42,7 +48,7 @@ def timm_create_model(
     return model, img_transform
 
 
-def create_efficientnet_b0(class_names: List[str], device: torch.device):
+def get_tv_efficientnet_b0(num_classes: int, device: torch.device):
 
     # Get the default weights for 'efficientnet_b0'
     weights = models.EfficientNet_B0_Weights.DEFAULT
@@ -60,15 +66,12 @@ def create_efficientnet_b0(class_names: List[str], device: torch.device):
         for param in efficientnet_b0.features[block].parameters():
             param.requires_grad = True
 
-    # Get the length of class_names (one output unit for each class)
-    output_shape: int = len(class_names)
-
     # Recreate the classifier layer and seed it to the target device
     efficientnet_b0.classifier = nn.Sequential(
         nn.Dropout(p=0.2, inplace=True),
         nn.Linear(
             in_features=1280,
-            out_features=output_shape,
+            out_features=num_classes,
             bias=True,
         ),
     ).to(device)

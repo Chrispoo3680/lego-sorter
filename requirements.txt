@@ -4,6 +4,7 @@ torchinfo
 tensorboard
 effdet
 timm
+albumentations
 pandas
 matplotlib
 seaborn

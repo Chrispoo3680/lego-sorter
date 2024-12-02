@@ -27,7 +27,12 @@ def train_step(
     train_loss, train_acc = 0, 0
 
     for batch, (X, y) in enumerate(
-        tqdm(dataloader, position=1, leave=False, desc="Iterating through batches.")
+        tqdm(
+            dataloader,
+            position=1,
+            leave=False,
+            desc="Iterating through training batches.",
+        )
     ):
         X, y = X.to(device), y.to(device)
 
@@ -64,7 +69,14 @@ def test_step(
     test_loss, test_acc = 0, 0
 
     with torch.inference_mode():
-        for batch, (X, y) in enumerate(dataloader):
+        for batch, (X, y) in enumerate(
+            tqdm(
+                dataloader,
+                position=1,
+                leave=False,
+                desc="Iterating through testing batches.",
+            )
+        ):
             X, y = X.to(device), y.to(device)
 
             test_pred_logits = model(X)

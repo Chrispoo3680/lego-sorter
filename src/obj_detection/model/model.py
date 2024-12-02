@@ -8,76 +8,53 @@ from torchvision import models
 
 import timm
 import timm.data
+import effdet
+
+from pathlib import Path
 
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 
-def timm_create_model(
+def effdet_create_model(
     model_name: str,
-    class_names: List[str],
+    num_classes: int,
     device: torch.device,
-    pretrained: bool = False,
-    frozen_blocks: List[int] = [],
+    pretrained_backbone: bool = True,
+    image_size: int = 512,
+    backbone_checkpoint_path: Union[str, Path] = "",
+    frozen_backbone: bool = False,
+    max_det_per_image: int = 100,
 ):
 
-    # Getting model architecture from timm
-    model = timm.create_model(model_name=model_name, pretrained=pretrained).to(device)
-
-    # Freeze given blocks in the 'features' section of the model
-    for idx in frozen_blocks:
-        for param in model.blocks[idx].parameters():
-            param.requires_grad = False
-
-    # Get the output and input shapes for the classifier
-    output_shape: int = len(class_names)
-    input_shape = model.classifier.in_features
-
-    # Recreate the classifier layer and seed it to the target device
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.2, inplace=True),
-        nn.Linear(
-            in_features=input_shape,
-            out_features=output_shape,
-            bias=True,
-        ),
-    ).to(device)
-
-    img_transform = timm.data.transforms_factory.create_transform(
-        **timm.data.resolve_data_config(model.pretrained_cfg, model=model)
+    possible_models = list(
+        effdet.config.model_config.efficientdet_model_param_dict.keys()
     )
 
-    return model, img_transform
+    if model_name not in possible_models:
+        raise KeyError(
+            "Model name is not valid! Must be a model from the effdet model config list. "
+        )
 
+    config = effdet.get_efficientdet_config(model_name)
 
-def create_efficientnet_b0(class_names: List[str], device: torch.device):
+    config.update({"num_classes": num_classes})
+    config.update({"image_size": [image_size, image_size]})
+    config.update({"max_det_per_image": max_det_per_image})
 
-    # Get the default weights for 'efficientnet_b0'
-    weights = models.EfficientNet_B0_Weights.DEFAULT
+    # Getting model architecture
+    net = effdet.EfficientDet(config, pretrained_backbone=pretrained_backbone).to(
+        device
+    )
+    net.class_net = effdet.efficientdet.HeadNet(
+        config,
+        num_outputs=config.num_classes,
+    )
 
-    # Transfering the model 'efficientnet_b0'
-    efficientnet_b0 = models.efficientnet_b0(weights=weights).to(device)
+    if backbone_checkpoint_path:
+        net.backbone.load_state_dict(torch.load(backbone_checkpoint_path), strict=False)
 
-    # Freeze all base layers in the 'features' section of the model
-    for param in efficientnet_b0.features.parameters():
-        param.requires_grad = False
+    if frozen_backbone:
+        for param in net.backbone.parameters():
+            param.requires_grad = False
 
-    unfrozen_blocks: list[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-    for block in unfrozen_blocks:
-        for param in efficientnet_b0.features[block].parameters():
-            param.requires_grad = True
-
-    # Get the length of class_names (one output unit for each class)
-    output_shape: int = len(class_names)
-
-    # Recreate the classifier layer and seed it to the target device
-    efficientnet_b0.classifier = nn.Sequential(
-        nn.Dropout(p=0.2, inplace=True),
-        nn.Linear(
-            in_features=1280,
-            out_features=output_shape,
-            bias=True,
-        ),
-    ).to(device)
-
-    return efficientnet_b0, weights
+    return net, config

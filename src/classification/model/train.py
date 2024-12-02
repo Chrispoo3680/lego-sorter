@@ -5,6 +5,7 @@ This is a file for training the lego classifier model. This file have to be run 
 import torch
 from torch import nn
 from torchvision.transforms import v2
+from torchvision import transforms
 from torch.utils.tensorboard.writer import SummaryWriter
 
 import sys
@@ -46,6 +47,7 @@ parser.add_argument(
     default=True,
     help="If model should use pretrained weights",
 )
+parser.add_argument("--image_size", type=int, default=None, help="Image size")
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
@@ -72,6 +74,7 @@ LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
 FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
 PRETRAINED = args.pretrained
+IMAGE_SIZE = args.image_size
 MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
 EXPERIMENT_NAME = args.experiment_name
@@ -208,9 +211,9 @@ logger.info(f"Using device = {device}")
 # Create the machine learning model
 logger.info("Loading model...")
 
-cnn_model, auto_transform = model.timm_create_model(
+cnn_model, auto_transform = model.get_timm_model(
     model_name=MODEL_NAME,
-    class_names=class_names,
+    num_classes=len(class_names),
     device=device,
     pretrained=PRETRAINED,
     frozen_blocks=FROZEN_BLOCKS,
@@ -267,7 +270,16 @@ manual_transform: Dict[str, v2.Compose] = {
     ),
 }
 
+
 image_transform = auto_transform
+
+if IMAGE_SIZE is not None:
+    for transform in image_transform.transforms:  # type: ignore
+        if type(transform) in (
+            transforms.transforms.Resize,
+            transforms.transforms.CenterCrop,
+        ):
+            transform.size = IMAGE_SIZE
 
 
 def target_transform(target):
@@ -286,7 +298,7 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 # Set loss, optimizer and learning rate scheduling
 loss_fn = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(
+optimizer = torch.optim.AdamW(
     cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 
@@ -297,7 +309,7 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
+early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
 
 results = engine.train(
     model=cnn_model,
