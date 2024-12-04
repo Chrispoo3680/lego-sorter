@@ -1,5 +1,5 @@
 """
-This is a file for training the lego classifier model. This file have to be run from the folder it is in.
+This is a file for training the lego classifier model.
 """
 
 import torch

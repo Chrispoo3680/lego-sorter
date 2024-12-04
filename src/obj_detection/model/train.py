@@ -1,11 +1,16 @@
 """
-This is a file for training the lego classifier model. This file have to be run from the folder it is in.
+This is a file for training the lego object detection model.
 """
 
 import torch
 from torch import nn
+from torchvision.transforms import v2
 from torchvision import transforms
 from torch.utils.tensorboard.writer import SummaryWriter
+from torch.amp.grad_scaler import GradScaler
+
+import effdet
+from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 
 import sys
 from pathlib import Path
@@ -31,16 +36,53 @@ parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
+parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
 parser.add_argument(
-    "--model_save_name",
+    "--frozen_blocks",
     type=str,
-    default="efficientnet_b0_lego_sorter",
-    help="Model save name",
+    default="",
+    help="Number of blocks to be frozen on format 'block1,block2,block3'",
 )
+parser.add_argument(
+    "--pretrained",
+    type=bool,
+    default=True,
+    help="If model should use pretrained weights",
+)
+parser.add_argument(
+    "--pretrained_backbone",
+    type=bool,
+    default=False,
+    help="If model should use pretrained backbone weights",
+)
+parser.add_argument(
+    "--checkpoint_path",
+    type=str,
+    default="",
+    help="Path to checkpoint used to initialize model weights",
+)
+parser.add_argument(
+    "--backbone_path",
+    type=str,
+    default="",
+    help="Path to checkpoint used to initialize model backbone weights",
+)
+parser.add_argument("--image_size", type=int, default=None, help="Image size")
+parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
     "--experiment_variable", type=str, default=None, help="Experiment variable"
 )
+
+args, remaining = parser.parse_known_args()
+
+parser.add_argument(
+    "--model_save_name",
+    type=str,
+    default=args.model_name + "_lego_classifier",
+    help="Model save name",
+)
+
 
 args = parser.parse_args()
 
@@ -49,6 +91,14 @@ args = parser.parse_args()
 NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
+WEIGHT_DECAY = args.weight_decay
+FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
+PRETRAINED = args.pretrained
+PRETRAINED_BACKBONE = args.pretrained_backbone
+CHECKPOINT_PATH = args.checkpoint_path
+BACKBONE_PATH = args.backbone_path
+IMAGE_SIZE = args.image_size
+MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
 EXPERIMENT_NAME = args.experiment_name
 EXPERIMENT_VARIABLE = args.experiment_variable
