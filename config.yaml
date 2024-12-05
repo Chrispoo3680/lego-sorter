@@ -16,8 +16,8 @@ class_scraper_dataset1_name: real_image_dataset
 
 # OBJECT DETECTION DATASETS
 b200_dataset_link: https://www.kaggle.com/datasets/ronanpickell/b100-lego-detection-dataset
-b200_kaggle_dataset_handle: ronanpickell/b100-lego-detection-dataset
-b200_kaggle_dataset_name: b200-lego-detection-dataset
+b200_dataset_handle: ronanpickell/b100-lego-detection-dataset
+b200_dataset_name: b200-lego-detection-dataset
 
 # MODELS
 model_path: models/

@@ -103,3 +103,8 @@ def part_cat_csv_to_dict(part_to_cat_path: Union[str, Path]) -> Dict[str, int]:
     num_to_cat: Dict[str, int] = {num: cat for num, cat in zip(part_nums, part_cat_ids)}
 
     return num_to_cat
+
+
+def read_file(path) -> str:
+    with open(path, "r") as f:
+        return f.read()

@@ -15,7 +15,7 @@ from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 import sys
 from pathlib import Path
 
-repo_root_dir: Path = Path(__file__).parent.parent.parent
+repo_root_dir: Path = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(repo_root_dir))
 
 import os
@@ -24,10 +24,12 @@ from tqdm import tqdm
 import argparse
 import json
 
-from src.data import download, generate_lego_part_classes
+from src.data import download
 from src.common import utils, tools
 from src.obj_detection.preprocess import build_features
 import engine, model
+
+from typing import Dict, List
 
 
 # Setup arguments parsing for hyperparameters
@@ -108,21 +110,21 @@ config = tools.load_config()
 
 
 # Setup directories
-data_path: Path = repo_root_dir / config["data_path"]
+data_path: Path = repo_root_dir / config["data_path"] / "obj_detection"
 os.makedirs(data_path, exist_ok=True)
 
-part_class_path: Path = repo_root_dir / "src" / "data"
+part_class_path: Path = repo_root_dir / "src" / "data" / "parts.csv"
 
-model_save_path: Path = repo_root_dir / config["model_path"]
+model_save_path: Path = repo_root_dir / config["model_path"] / "obj_detection"
 os.makedirs(model_save_path, exist_ok=True)
 model_save_name_version: str = utils.model_save_version(
     save_dir_path=model_save_path, save_name=MODEL_SAVE_NAME
 )
 
-results_save_path: Path = repo_root_dir / config["results_path"]
+results_save_path: Path = repo_root_dir / config["results_path"] / "obj_detection"
 os.makedirs(results_save_path, exist_ok=True)
 
-logging_dir_path: Path = repo_root_dir / config["logging_path"]
+logging_dir_path: Path = repo_root_dir / config["logging_path"] / "obj_detection"
 os.makedirs(logging_dir_path, exist_ok=True)
 
 logging_file_path: Path = logging_dir_path / (model_save_name_version + "_training.log")
@@ -159,64 +161,30 @@ if os.listdir(data_path):
         f"There already exists files in directory: {data_path}. Assuming datasets are already downloaded!"
     )
 else:
-    download.api_scraper_download_data(
-        download_url=config["scraper_dataset0_download"],
-        save_path=data_path,
-        data_name=config["scraper_dataset0_name"],
-        logging_file_path=logging_file_path,
-    )
-
-    download.api_scraper_download_data(
-        download_url=config["scraper_dataset1_download"],
-        save_path=data_path,
-        data_name=config["scraper_dataset1_name"],
-        logging_file_path=logging_file_path,
-    )
-
     download.kaggle_download_data(
-        data_handle=config["kaggle_dataset_handle"],
+        data_handle=config["b200_dataset_handle"],
         save_path=data_path,
-        data_name=config["kaggle_dataset_name"],
+        data_name=config["b200_dataset_name"],
         logging_file_path=logging_file_path,
     )
 
 
-# Finding all paths to image data in downloaded datasets
-image_paths: list[Path] = []
-for root, dirs, _ in os.walk(data_path):
-    for dir_name in dirs:
-        folder_path: str = os.path.join(root, dir_name)
-        subfolder_contents: list[str] = os.listdir(folder_path)
-
-        if all(
-            os.path.isfile(os.path.join(folder_path, item))
-            for item in subfolder_contents
-        ):
-            image_paths.append(Path(root))
-            break
+# Define paths to image and annotation data in downloaded dataset
+image_dir = data_path / config["b200_dataset_name"] / "images"
+annot_dir = data_path / config["b200_dataset_name"] / "annotations"
 
 
 # Creating file with part id classes if not already created
-part_ids: list[str] = sorted(
+part_ids: List[str] = sorted(
     set([part for img_path in image_paths for part in os.listdir(img_path)])
 )
-class_names: list[str] = []
+class_names: List[str] = []
 
-if "part_classes.json" in os.listdir(part_class_path):
-    logger.info(
-        f"'part_classes.json' is already in target directory. Assuming part classes are already created!"
-    )
-else:
-    generate_lego_part_classes.get_part_classes(
-        data_path=data_path, save_path=(part_class_path / "part_classes.json")
-    )
-
-with open(part_class_path / "part_classes.json", "r") as file:
-    class_dict: dict = json.load(file)
-    for id in part_ids:
-        part_class = str(class_dict[id])
-        if part_class not in class_names:
-            class_names.append(part_class)
+class_dict: Dict[str, int] = tools.part_cat_csv_to_dict(part_class_path)
+for id in part_ids:
+    part_class = str(tools.get_part_cat(part_id=id, id_to_cat=class_dict))
+    if part_class not in class_names:
+        class_names.append(part_class)
 class_names.sort()
 
 
@@ -226,6 +194,12 @@ logger.info(
     f"\n    num_epochs = {NUM_EPOCHS}"
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
+    f"\n    weight_decay = {WEIGHT_DECAY}"
+    f"\n    frozen_blocks = {FROZEN_BLOCKS}"
+    f"\n    pretrained = {PRETRAINED}"
+    f"\n    checkpoint_path = {CHECKPOINT_PATH}"
+    f"\n    image_size = {IMAGE_SIZE}"
+    f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
     f"\n    experiment_name = {EXPERIMENT_NAME}"
     f"\n    experiment_name = {EXPERIMENT_VARIABLE}"
@@ -240,18 +214,23 @@ logger.info(f"Using device = {device}")
 # Create the machine learning model
 logger.info("Loading model...")
 
-cnn_model, weights = model.create_efficientnet_b0(
-    class_names=class_names, device=device
+objdet_model, auto_transform = model.effdet_create_model(
+    model_name=MODEL_NAME,
+    num_classes=len(class_names),
+    device=device,
+    pretrained=PRETRAINED,
+    checkpoint_path=CHECKPOINT_PATH,
+    frozen_blocks=FROZEN_BLOCKS,
 )
 
-frozen_blocks: list[str] = [
+frozen_blocks: List[str] = [
     str(i)
-    for i, block in enumerate(cnn_model.features)
+    for i, block in enumerate(cnn_model.blocks)
     if not all([parameter.requires_grad for parameter in block.parameters()])
 ]
-unfrozen_blocks: list[str] = [
+unfrozen_blocks: List[str] = [
     str(i)
-    for i, block in enumerate(cnn_model.features)
+    for i, block in enumerate(cnn_model.blocks)
     if all([parameter.requires_grad for parameter in block.parameters()])
 ]
 
@@ -263,30 +242,58 @@ logger.info(
 
 
 # Create a manual transform for the images if it is wanted to use that
-manual_transforms = transforms.Compose(
-    [
-        transforms.Resize(size=(224, 224)),
-        transforms.TrivialAugmentWide(num_magnitude_bins=16),
-        transforms.Grayscale(),
-        transforms.ToTensor(),
-    ]
-)
-
-class_set = list(set(class_dict.values()))
-class_dict_idx = {
-    part: class_set.index(part_class) for part, part_class in class_dict.items()
+manual_transform: Dict[str, v2.Compose] = {
+    "train": v2.Compose(
+        [
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Resize(
+                size=(256, 256),
+                interpolation=v2.InterpolationMode.BICUBIC,
+                max_size=None,
+                antialias=True,
+            ),
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomResizedCrop(size=(224, 224), antialias=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    ),
+    "test": v2.Compose(
+        [
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Resize(
+                size=(256, 256),
+                interpolation=v2.InterpolationMode.BICUBIC,
+                max_size=None,
+                antialias=True,
+            ),
+            v2.CenterCrop(size=(224, 224)),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    ),
 }
-target_transform = transforms.Lambda(lambda x: class_dict_idx[x])
 
 
-# Get transforms from the transfered model
-auto_transforms = weights.transforms()
+image_transform = auto_transform
+
+if IMAGE_SIZE is not None:
+    for transform in image_transform.transforms:  # type: ignore
+        if type(transform) in (
+            transforms.transforms.Resize,
+            transforms.transforms.CenterCrop,
+        ):
+            transform.size = IMAGE_SIZE
+
+
+def target_transform(target):
+    return tools.get_part_cat(target, class_dict)
 
 
 # Create train/test dataloader
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
-    transform=auto_transforms,
+    transform=image_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
 )
@@ -295,7 +302,10 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 # Set loss, optimizer and learning rate scheduling
 loss_fn = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.AdamW(
+    cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
+)
+
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
     optimizer, milestones=[11, 21, 31, 41], gamma=0.1
 )
@@ -303,7 +313,10 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=3, min_delta=0.001)
+early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
+
+# Set up scaler for better efficiency
+scaler = GradScaler()
 
 results = engine.train(
     model=cnn_model,
@@ -317,6 +330,7 @@ results = engine.train(
     logging_file_path=logging_file_path,
     writer=writer,
     early_stopping=early_stopping,
+    scaler=scaler,
 )
 
 
