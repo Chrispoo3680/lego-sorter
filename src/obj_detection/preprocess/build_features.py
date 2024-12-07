@@ -32,9 +32,10 @@ NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: igno
 def create_dataloaders(
     image_dir: Union[str, Path],
     annot_dir: Union[str, Path],
-    transform: transforms.Compose,
-    target_transform: Callable,
+    transform: A.Compose,
     batch_size: int,
+    image_size: int = 512,
+    target_transform: Optional[Callable] = None,
     num_workers: int = NUM_WORKERS,
 ):
 
@@ -43,7 +44,7 @@ def create_dataloaders(
         image_dir=image_dir,
         annot_dir=annot_dir,
         transform=transform,
-        image_size=target_transform,
+        image_size=image_size,
         target_transform=target_transform,
     )
 
@@ -70,7 +71,7 @@ def create_dataloaders(
         pin_memory=True,
     )
 
-    return train_dataloader, test_dataloader
+    return train_dataloader, test_dataloader, dataset
 
 
 # Custom Dataset class for altering the labels of the dataset

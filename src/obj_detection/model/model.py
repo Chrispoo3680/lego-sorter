@@ -23,7 +23,8 @@ def effdet_create_model(
     pretrained_backbone: bool = True,
     image_size: int = 512,
     backbone_checkpoint_path: Union[str, Path] = "",
-    frozen_backbone: bool = False,
+    frozen_backbone: bool = True,
+    unfrozen_backbone_blocks: List[int] = [],
     max_det_per_image: int = 100,
 ):
 
@@ -55,6 +56,10 @@ def effdet_create_model(
     if frozen_backbone:
         for param in net.backbone.parameters():
             param.requires_grad = False
+
+    for block in unfrozen_backbone_blocks:
+        for param in net.backbone.blocks[block].parameters():
+            param.requires_grad = True
 
     backbone_transform = timm.data.transforms_factory.create_transform(
         **timm.data.resolve_data_config(net.backbone.pretrained_cfg, model=net)

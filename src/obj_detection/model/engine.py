@@ -5,11 +5,14 @@ Contains functions for training and testing a PyTorch model.
 import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
+from torch.amp.grad_scaler import GradScaler
 
 from pathlib import Path
 from tqdm import tqdm
 import logging
 from src.common import tools
+
+from typing import Dict, List, Optional, Callable, Any
 
 
 def train_step(
@@ -17,6 +20,7 @@ def train_step(
     dataloader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     optimizer: torch.optim.Optimizer,
+    scaler: GradScaler,
     device: torch.device,
 ):
 
@@ -24,19 +28,27 @@ def train_step(
 
     train_loss, train_acc = 0, 0
 
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+    for batch, (X, y) in enumerate(
+        tqdm(
+            dataloader,
+            position=1,
+            leave=False,
+            desc="Iterating through training batches.",
+        )
+    ):
+        with torch.autocast(device_type=device.type, dtype=torch.float16):
+            X, y = X.to(device), y.to(device)
+            y_pred = model(X)
+            loss = loss_fn(y_pred, y)
+            train_loss += loss.item()
 
-        y_pred = model(X)
+        scaler.scale(loss).backward()
 
-        loss = loss_fn(y_pred, y)
-        train_loss += loss.item()
+        scaler.step(optimizer)
 
-        optimizer.zero_grad()
+        scaler.update()
 
-        loss.backward()
-
-        optimizer.step()
+        optimizer.zero_grad(set_to_none=True)
 
         # Calculate and accumulate accuracy metric across all batches
         y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
@@ -58,19 +70,26 @@ def test_step(
     model.eval()
 
     test_loss, test_acc = 0, 0
+    with torch.autocast(device_type=device.type, dtype=torch.float16):
+        with torch.inference_mode():
+            for batch, (X, y) in enumerate(
+                tqdm(
+                    dataloader,
+                    position=1,
+                    leave=False,
+                    desc="Iterating through testing batches.",
+                )
+            ):
+                X, y = X.to(device), y.to(device)
 
-    with torch.inference_mode():
-        for batch, (X, y) in enumerate(dataloader):
-            X, y = X.to(device), y.to(device)
+                test_pred_logits = model(X)
 
-            test_pred_logits = model(X)
+                loss = loss_fn(test_pred_logits, y)
+                test_loss += loss.item()
 
-            loss = loss_fn(test_pred_logits, y)
-            test_loss += loss.item()
-
-            # Calculate and accumulate accuracy
-            test_pred_labels = test_pred_logits.argmax(dim=1)
-            test_acc += (test_pred_labels == y).sum().item() / len(test_pred_labels)
+                # Calculate and accumulate accuracy
+                test_pred_labels = test_pred_logits.argmax(dim=1)
+                test_acc += (test_pred_labels == y).sum().item() / len(test_pred_labels)
 
     # Adjust metrics to get average loss and accuracy per batch
     test_loss = test_loss / len(dataloader)
@@ -88,15 +107,16 @@ def train(
     epochs: int,
     device: torch.device,
     logging_file_path: Path,
-    writer: SummaryWriter | None,
-    early_stopping,
-):
+    early_stopping: Any,
+    scaler: GradScaler,
+    writer: Optional[SummaryWriter] = None,
+) -> Dict[str, List[float]]:
 
     logger: logging.Logger = tools.create_logger(
         log_path=logging_file_path, logger_name=__name__
     )
 
-    results = {
+    results: Dict[str, List[float]] = {
         "learning_rate": [],
         "train_loss": [],
         "train_acc": [],
@@ -104,16 +124,20 @@ def train(
         "test_acc": [],
     }
 
-    for epoch in tqdm(range(epochs), position=0, leave=True):
+    for epoch in tqdm(range(epochs), position=0, desc="Iterating through epochs."):
         train_loss, train_acc = train_step(
             model=model,
             dataloader=train_dataloader,
             loss_fn=loss_fn,
             optimizer=optimizer,
+            scaler=scaler,
             device=device,
         )
         test_loss, test_acc = test_step(
-            model=model, dataloader=test_dataloader, loss_fn=loss_fn, device=device
+            model=model,
+            dataloader=test_dataloader,
+            loss_fn=loss_fn,
+            device=device,
         )
 
         # Adjust learning rate
@@ -126,7 +150,8 @@ def train(
             f"train_acc: {train_acc:.4f}  |  "
             f"test_loss: {test_loss:.4f}  |  "
             f"test_acc: {test_acc:.4f}  |  "
-            f"learning_rate: {optimizer.param_groups[0]['lr']}"
+            f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
+            f"last early stopping counter: {early_stopping.counter}"
         )
 
         results["learning_rate"].append(optimizer.param_groups[0]["lr"])
@@ -156,11 +181,15 @@ def train(
             writer.close()
 
         # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
-        early_stopping(test_loss)
+        early_stopping(test_loss, model, epoch + 1)
         if early_stopping.early_stop:
             logger.info(
                 f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"
             )
+            logger.info(
+                f"Saving model with lowest loss from epoch: {early_stopping.best_score_epoch}"
+            )
+
             break
 
     return results

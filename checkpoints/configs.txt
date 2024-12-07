@@ -1,0 +1,30 @@
+tf_efficientnet_b0_lego_classifierV0.pt:
+    num_epochs = 50
+    batch_size = 64
+    learning_rate = 0.001
+    weight_decay = 0.0001
+    frozen_blocks = []
+    pretrained = True
+    image_size = default
+    model_name = tf_efficientnet_b0
+    
+    Last epoch:
+	Epoch: 24  |  train_loss: 0.1249  |  train_acc: 0.9493  |  test_loss: 0.1505  |  test_acc: 0.9396
+
+
+
+tf_efficientnet_b0_lego_classifierV1.pt:
+    num_epochs = 50
+    batch_size = 32
+    learning_rate = 0.001
+    weight_decay = 0.0001
+    frozen_blocks = []
+    pretrained = True
+    checkpoint_path = lego-sorter/checkpoints/tf_efficientnet_b0_lego_classifierV0.pt
+    image_size = 512
+    model_name = tf_efficientnet_b0
+
+    Last epoch:
+	Epoch: 14  |  train_loss: 0.1037  |  train_acc: 0.9552  |  test_loss: 0.1213  |  test_acc: 0.9483
+
+	

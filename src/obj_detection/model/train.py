@@ -11,6 +11,9 @@ from torch.amp.grad_scaler import GradScaler
 
 import effdet
 from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
+import albumentations as A
+from albumentations.pytorch.transforms import ToTensorV2
+from albumentations import cv2
 
 import sys
 from pathlib import Path
@@ -40,28 +43,22 @@ parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
 parser.add_argument(
-    "--frozen_blocks",
-    type=str,
-    default="",
+    "--frozen_backbone",
+    type=bool,
+    default=True,
     help="Number of blocks to be frozen on format 'block1,block2,block3'",
 )
 parser.add_argument(
-    "--pretrained",
-    type=bool,
-    default=True,
-    help="If model should use pretrained weights",
+    "--unfrozen_backbone_blocks",
+    type=str,
+    default="",
+    help="Number of blocks to be unfrozen on format 'block1,block2,block3'",
 )
 parser.add_argument(
     "--pretrained_backbone",
     type=bool,
     default=False,
     help="If model should use pretrained backbone weights",
-)
-parser.add_argument(
-    "--checkpoint_path",
-    type=str,
-    default="",
-    help="Path to checkpoint used to initialize model weights",
 )
 parser.add_argument(
     "--backbone_path",
@@ -76,12 +73,12 @@ parser.add_argument(
     "--experiment_variable", type=str, default=None, help="Experiment variable"
 )
 
-args, remaining = parser.parse_known_args()
+args, _ = parser.parse_known_args()
 
 parser.add_argument(
     "--model_save_name",
     type=str,
-    default=args.model_name + "_lego_classifier",
+    default=args.model_name + "_lego_objdet",
     help="Model save name",
 )
 
@@ -90,20 +87,21 @@ args = parser.parse_args()
 
 
 # Setup hyperparameters
-NUM_EPOCHS = args.num_epochs
-BATCH_SIZE = args.batch_size
-LEARNING_RATE = args.learning_rate
-WEIGHT_DECAY = args.weight_decay
-FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
-PRETRAINED = args.pretrained
-PRETRAINED_BACKBONE = args.pretrained_backbone
-CHECKPOINT_PATH = args.checkpoint_path
-BACKBONE_PATH = args.backbone_path
-IMAGE_SIZE = args.image_size
-MODEL_NAME = args.model_name
-MODEL_SAVE_NAME = args.model_save_name
-EXPERIMENT_NAME = args.experiment_name
-EXPERIMENT_VARIABLE = args.experiment_variable
+NUM_EPOCHS: int = args.num_epochs
+BATCH_SIZE: int = args.batch_size
+LEARNING_RATE: float = args.learning_rate
+WEIGHT_DECAY: float = args.weight_decay
+UNFROZEN_BACKBONE_BLOCKS: List[int] = [
+    int(b) for b in args.unfrozen_backbone_blocks.split(",") if b != ""
+]
+FROZEN_BACKBONE: bool = True if UNFROZEN_BACKBONE_BLOCKS else args.frozen_backbone
+PRETRAINED_BACKBONE: bool = args.pretrained_backbone
+BACKBONE_PATH: str = args.backbone_path
+IMAGE_SIZE: int = args.image_size
+MODEL_NAME: str = args.model_name
+MODEL_SAVE_NAME: str = args.model_save_name
+EXPERIMENT_NAME: str = args.experiment_name
+EXPERIMENT_VARIABLE: str = args.experiment_variable
 
 
 config = tools.load_config()
@@ -175,17 +173,7 @@ annot_dir = data_path / config["b200_dataset_name"] / "annotations"
 
 
 # Creating file with part id classes if not already created
-part_ids: List[str] = sorted(
-    set([part for img_path in image_paths for part in os.listdir(img_path)])
-)
-class_names: List[str] = []
-
 class_dict: Dict[str, int] = tools.part_cat_csv_to_dict(part_class_path)
-for id in part_ids:
-    part_class = str(tools.get_part_cat(part_id=id, id_to_cat=class_dict))
-    if part_class not in class_names:
-        class_names.append(part_class)
-class_names.sort()
 
 
 # Logging hyperparameters
@@ -195,9 +183,10 @@ logger.info(
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    weight_decay = {WEIGHT_DECAY}"
-    f"\n    frozen_blocks = {FROZEN_BLOCKS}"
-    f"\n    pretrained = {PRETRAINED}"
-    f"\n    checkpoint_path = {CHECKPOINT_PATH}"
+    f"\n    frozen_backbone = {FROZEN_BACKBONE}"
+    f"\n    unfrozen_backbone_blocks = {UNFROZEN_BACKBONE_BLOCKS}"
+    f"\n    pretrained_backbone = {PRETRAINED_BACKBONE}"
+    f"\n    backbone_path = {BACKBONE_PATH}"
     f"\n    image_size = {IMAGE_SIZE}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
@@ -211,79 +200,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using device = {device}")
 
 
-# Create the machine learning model
-logger.info("Loading model...")
-
-objdet_model, auto_transform = model.effdet_create_model(
-    model_name=MODEL_NAME,
-    num_classes=len(class_names),
-    device=device,
-    pretrained=PRETRAINED,
-    checkpoint_path=CHECKPOINT_PATH,
-    frozen_blocks=FROZEN_BLOCKS,
-)
-
-frozen_blocks: List[str] = [
-    str(i)
-    for i, block in enumerate(cnn_model.blocks)
-    if not all([parameter.requires_grad for parameter in block.parameters()])
-]
-unfrozen_blocks: List[str] = [
-    str(i)
-    for i, block in enumerate(cnn_model.blocks)
-    if all([parameter.requires_grad for parameter in block.parameters()])
-]
-
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-)
-
-
 # Create a manual transform for the images if it is wanted to use that
-manual_transform: Dict[str, v2.Compose] = {
-    "train": v2.Compose(
-        [
-            v2.ToImage(),
-            v2.ToDtype(torch.float32, scale=True),
-            v2.Resize(
-                size=(256, 256),
-                interpolation=v2.InterpolationMode.BICUBIC,
-                max_size=None,
-                antialias=True,
-            ),
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomResizedCrop(size=(224, 224), antialias=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
+image_transform = A.Compose(
+    [
+        A.Resize(height=IMAGE_SIZE, width=IMAGE_SIZE, interpolation=cv2.INTER_CUBIC),
+        A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ToTensorV2(),
+    ],
+    bbox_params=A.BboxParams(
+        format="pascal_voc", min_area=0, min_visibility=0, label_fields=["labels"]
     ),
-    "test": v2.Compose(
-        [
-            v2.ToImage(),
-            v2.ToDtype(torch.float32, scale=True),
-            v2.Resize(
-                size=(256, 256),
-                interpolation=v2.InterpolationMode.BICUBIC,
-                max_size=None,
-                antialias=True,
-            ),
-            v2.CenterCrop(size=(224, 224)),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    ),
-}
-
-
-image_transform = auto_transform
-
-if IMAGE_SIZE is not None:
-    for transform in image_transform.transforms:  # type: ignore
-        if type(transform) in (
-            transforms.transforms.Resize,
-            transforms.transforms.CenterCrop,
-        ):
-            transform.size = IMAGE_SIZE
+)
 
 
 def target_transform(target):
@@ -291,11 +218,44 @@ def target_transform(target):
 
 
 # Create train/test dataloader
-train_dataloader, test_dataloader = build_features.create_dataloaders(
-    data_dir_path=image_paths,
+train_dataloader, test_dataloader, dataset = build_features.create_dataloaders(
+    image_dir=image_dir,
+    annot_dir=annot_dir,
     transform=image_transform,
     target_transform=target_transform,
     batch_size=BATCH_SIZE,
+)
+
+
+# Create the object detection model
+logger.info("Loading model...")
+
+objdet_model, auto_transform = model.effdet_create_model(
+    model_name=MODEL_NAME,
+    num_classes=len(dataset.transformed_classes),
+    device=device,
+    pretrained_backbone=PRETRAINED_BACKBONE,
+    backbone_checkpoint_path=BACKBONE_PATH,
+    frozen_backbone=FROZEN_BACKBONE,
+    unfrozen_backbone_blocks=UNFROZEN_BACKBONE_BLOCKS,
+    max_det_per_image=400,
+)
+
+frozen_blocks: List[str] = [
+    str(i)
+    for i, block in enumerate(objdet_model.backbone.blocks)
+    if not all([parameter.requires_grad for parameter in block.parameters()])
+]
+unfrozen_blocks: List[str] = [
+    str(i)
+    for i, block in enumerate(objdet_model.backbone.blocks)
+    if all([parameter.requires_grad for parameter in block.parameters()])
+]
+
+logger.info(
+    f"Successfully loaded model: {objdet_model.__class__.__name__}"
+    f"\n    Frozen blocks in backbone (not trainable): {', '.join(frozen_blocks)}"
+    f"\n    Unfrozen blocks in backbone (trainable): {', '.join(unfrozen_blocks)}"
 )
 
 
@@ -303,7 +263,7 @@ train_dataloader, test_dataloader = build_features.create_dataloaders(
 loss_fn = nn.CrossEntropyLoss()
 
 optimizer = torch.optim.AdamW(
-    cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
+    objdet_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -319,7 +279,7 @@ early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
 scaler = GradScaler()
 
 results = engine.train(
-    model=cnn_model,
+    model=objdet_model,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,
@@ -336,7 +296,7 @@ results = engine.train(
 
 # Save the trained model
 utils.save_model(
-    model=cnn_model,
+    model=objdet_model,
     target_dir_path=model_save_path,
     model_name=model_save_name_version + ".pt",
     logging_file_path=logging_file_path,
