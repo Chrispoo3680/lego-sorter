@@ -59,14 +59,16 @@ def get_tv_efficientnet_b0(
     # Get the default weights for 'efficientnet_b0'
     if pretrained:
         weights = models.EfficientNet_B0_Weights.DEFAULT
+        transform = weights.transforms()
     else:
         weights = None
+        transform = None
 
     # Transfering the model 'efficientnet_b0'
     efficientnet_b0 = models.efficientnet_b0(weights=weights).to(device)
 
     if checkpoint_path:
-        efficientnet_b0.load_state_dict(torch.load(checkpoint_path))
+        efficientnet_b0.load_state_dict(torch.load(checkpoint_path), strict=False)
 
     # Freeze given blocks in the 'features' section of the model
     for idx in frozen_blocks:
@@ -85,4 +87,4 @@ def get_tv_efficientnet_b0(
         ),
     ).to(device)
 
-    return efficientnet_b0, weights
+    return efficientnet_b0, transform

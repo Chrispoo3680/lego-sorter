@@ -125,15 +125,13 @@ class PartSortingDataset(datasets.DatasetFolder):
             tuple: (sample, target) where target is class_index of the target class.
         """
 
-        class_to_idx = self.class_to_idx
-        target_to_transformed = self.target_to_transformed
-
         path, target = self.samples[index]
         sample = self.loader(path)
 
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
+            target_to_transformed = self.target_to_transformed
             target = target_to_transformed[target]
 
         return sample, target

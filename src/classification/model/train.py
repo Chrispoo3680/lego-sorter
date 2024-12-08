@@ -58,6 +58,9 @@ parser.add_argument(
     default="",
     help="Path to checkpoint used to initialize model weights",
 )
+parser.add_argument(
+    "--target_transform", type=bool, default=True, help="Target transform is applied"
+)
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
@@ -85,6 +88,7 @@ WEIGHT_DECAY = args.weight_decay
 FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
 PRETRAINED = args.pretrained
 CHECKPOINT_PATH = args.checkpoint_path
+TARGET_TRANSFORM = args.target_transform
 IMAGE_SIZE = args.image_size
 MODEL_NAME = args.model_name
 MODEL_SAVE_NAME = args.model_save_name
@@ -286,8 +290,14 @@ if IMAGE_SIZE is not None:
             transform.size = IMAGE_SIZE
 
 
-def target_transform(target):
+def num_to_cat(target):
     return tools.get_part_cat(target, class_dict)
+
+
+if TARGET_TRANSFORM:
+    target_transform = lambda x: num_to_cat(x)
+else:
+    target_transform = None
 
 
 # Create train/test dataloader
