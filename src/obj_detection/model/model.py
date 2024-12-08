@@ -9,7 +9,7 @@ from torchvision import models
 import timm
 import timm.data
 import effdet
-from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
+from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain, DetBenchPredict
 
 from pathlib import Path
 
@@ -20,6 +20,7 @@ def effdet_create_model(
     model_name: str,
     num_classes: int,
     device: torch.device,
+    bench_task: str = "",
     pretrained_backbone: bool = True,
     image_size: int = 512,
     backbone_checkpoint_path: Union[str, Path] = "",
@@ -64,5 +65,10 @@ def effdet_create_model(
     backbone_transform = timm.data.transforms_factory.create_transform(
         **timm.data.resolve_data_config(net.backbone.pretrained_cfg, model=net)
     )
+
+    if bench_task == "train":
+        net = DetBenchTrain(net)
+    elif bench_task == "predict":
+        net = DetBenchPredict(net)
 
     return net, backbone_transform

@@ -48,23 +48,32 @@ def get_timm_model(
     return model, img_transform
 
 
-def get_tv_efficientnet_b0(num_classes: int, device: torch.device):
+def get_tv_efficientnet_b0(
+    num_classes: int,
+    device: torch.device,
+    pretrained: bool = False,
+    checkpoint_path: str = "",
+    frozen_blocks: List[int] = [],
+):
 
     # Get the default weights for 'efficientnet_b0'
-    weights = models.EfficientNet_B0_Weights.DEFAULT
+    if pretrained:
+        weights = models.EfficientNet_B0_Weights.DEFAULT
+    else:
+        weights = None
 
     # Transfering the model 'efficientnet_b0'
     efficientnet_b0 = models.efficientnet_b0(weights=weights).to(device)
 
-    # Freeze all base layers in the 'features' section of the model
-    for param in efficientnet_b0.features.parameters():
-        param.requires_grad = False
+    if checkpoint_path:
+        efficientnet_b0.load_state_dict(torch.load(checkpoint_path))
 
-    unfrozen_blocks: list[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-    for block in unfrozen_blocks:
-        for param in efficientnet_b0.features[block].parameters():
-            param.requires_grad = True
+    # Freeze given blocks in the 'features' section of the model
+    for idx in frozen_blocks:
+        if idx not in range(len(efficientnet_b0.features)):
+            break
+        for param in efficientnet_b0.features[idx].parameters():
+            param.requires_grad = False
 
     # Recreate the classifier layer and seed it to the target device
     efficientnet_b0.classifier = nn.Sequential(

@@ -7,8 +7,9 @@ from torch import nn
 from torchvision.transforms import v2
 from torchvision import transforms
 from torch.utils.tensorboard.writer import SummaryWriter
-from torch.amp.grad_scaler import GradScaler
+from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
+import timm.utils
 import effdet
 from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 import albumentations as A
@@ -276,7 +277,9 @@ logger.info("Starting training...\n")
 early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
 
 # Set up scaler for better efficiency
-scaler = GradScaler()
+objdet_model = NativeDDP(objdet_model, device_ids=[device])
+
+scaler = timm.utils.NativeScaler()
 
 results = engine.train(
     model=objdet_model,

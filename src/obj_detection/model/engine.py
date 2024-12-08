@@ -5,7 +5,8 @@ Contains functions for training and testing a PyTorch model.
 import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
-from torch.amp.grad_scaler import GradScaler
+
+import timm.utils
 
 from pathlib import Path
 from tqdm import tqdm
@@ -20,9 +21,11 @@ def train_step(
     dataloader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     optimizer: torch.optim.Optimizer,
-    scaler: GradScaler,
+    scaler: timm.utils.NativeScaler,
     device: torch.device,
 ):
+
+    losses_m = timm.utils.AverageMeter()
 
     model.train()
 
@@ -38,8 +41,8 @@ def train_step(
     ):
         with torch.autocast(device_type=device.type, dtype=torch.float16):
             X, y = X.to(device), y.to(device)
-            y_pred = model(X)
-            loss = loss_fn(y_pred, y)
+            output = model(X, y)
+            loss = loss_fn(output["loss"], y)
             train_loss += loss.item()
 
         scaler.scale(loss).backward()
@@ -108,7 +111,7 @@ def train(
     device: torch.device,
     logging_file_path: Path,
     early_stopping: Any,
-    scaler: GradScaler,
+    scaler: timm.utils.NativeScaler,
     writer: Optional[SummaryWriter] = None,
 ) -> Dict[str, List[float]]:
 

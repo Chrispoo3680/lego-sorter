@@ -32,6 +32,9 @@ from typing import Dict, List
 # Setup arguments parsing for hyperparameters
 parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 
+parser.add_argument(
+    "--timm_model", type=bool, default=True, help="Should model come from timm"
+)
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
@@ -219,33 +222,23 @@ logger.info(f"Using device = {device}")
 
 
 # Create the machine learning model
-logger.info("Loading model...")
-
-cnn_model, auto_transform = model.get_timm_model(
-    model_name=MODEL_NAME,
-    num_classes=len(class_names),
-    device=device,
-    pretrained=PRETRAINED,
-    checkpoint_path=CHECKPOINT_PATH,
-    frozen_blocks=FROZEN_BLOCKS,
-)
-
-frozen_blocks: List[str] = [
-    str(i)
-    for i, block in enumerate(cnn_model.blocks)
-    if not all([parameter.requires_grad for parameter in block.parameters()])
-]
-unfrozen_blocks: List[str] = [
-    str(i)
-    for i, block in enumerate(cnn_model.blocks)
-    if all([parameter.requires_grad for parameter in block.parameters()])
-]
-
-logger.info(
-    f"Successfully loaded model: {cnn_model.__class__.__name__}"
-    f"\n    Frozen blocks in 'features' layer (not trainable): {', '.join(frozen_blocks)}"
-    f"\n    Unfrozen blocks in 'features' layer (trainable): {', '.join(unfrozen_blocks)}"
-)
+if args.timm_model:
+    cnn_model, auto_transform = model.get_timm_model(
+        model_name=MODEL_NAME,
+        num_classes=len(class_names),
+        device=device,
+        pretrained=PRETRAINED,
+        checkpoint_path=CHECKPOINT_PATH,
+        frozen_blocks=FROZEN_BLOCKS,
+    )
+else:
+    cnn_model, auto_transform = model.get_tv_efficientnet_b0(
+        num_classes=len(class_names),
+        device=device,
+        pretrained=PRETRAINED,
+        checkpoint_path=CHECKPOINT_PATH,
+        frozen_blocks=FROZEN_BLOCKS,
+    )
 
 
 # Create a manual transform for the images if it is wanted to use that
