@@ -198,7 +198,10 @@ class_dict: Dict[str, int] = tools.part_cat_csv_to_dict(part_class_path)
 for id in part_ids:
     part_class = str(tools.get_part_cat(part_id=id, id_to_cat=class_dict))
     if part_class not in class_names:
-        class_names.append(part_class)
+        if TARGET_TRANSFORM:
+            class_names.append(part_class)
+        else:
+            class_names.append(id)
 class_names.sort()
 
 
