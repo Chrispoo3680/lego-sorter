@@ -68,7 +68,9 @@ def get_tv_efficientnet_b0(
     efficientnet_b0 = models.efficientnet_b0(weights=weights).to(device)
 
     if checkpoint_path:
-        efficientnet_b0.load_state_dict(torch.load(checkpoint_path), strict=False)
+        efficientnet_b0.features.load_state_dict(
+            torch.load(checkpoint_path), strict=False
+        )
 
     # Freeze given blocks in the 'features' section of the model
     for idx in frozen_blocks:

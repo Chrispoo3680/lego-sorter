@@ -33,7 +33,11 @@ from typing import Dict, List
 parser = argparse.ArgumentParser(description="Hyperparameter configuration")
 
 parser.add_argument(
-    "--timm_model", type=bool, default=True, help="Should model come from timm"
+    "--timm_model",
+    type=bool,
+    default=True,
+    action=argparse.BooleanOptionalAction,
+    help="Should model come from timm",
 )
 parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
@@ -59,7 +63,11 @@ parser.add_argument(
     help="Path to checkpoint used to initialize model weights",
 )
 parser.add_argument(
-    "--target_transform", type=bool, default=True, help="Target transform is applied"
+    "--target_transform",
+    type=bool,
+    default=True,
+    action=argparse.BooleanOptionalAction,
+    help="Target transform is applied",
 )
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
@@ -215,6 +223,7 @@ logger.info(
     f"\n    frozen_blocks = {FROZEN_BLOCKS}"
     f"\n    pretrained = {PRETRAINED}"
     f"\n    checkpoint_path = {CHECKPOINT_PATH}"
+    f"\n    target_transform = {TARGET_TRANSFORM}"
     f"\n    image_size = {IMAGE_SIZE}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
@@ -307,7 +316,7 @@ else:
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
     transform=image_transform,
-    target_transform=target_transform,
+    target_transform=TARGET_TRANSFORM,
     batch_size=BATCH_SIZE,
 )
 

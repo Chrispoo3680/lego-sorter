@@ -13,6 +13,8 @@ from tqdm import tqdm
 import logging
 from src.common import tools
 
+from collections import OrderedDict
+
 from typing import Dict, List, Optional, Callable, Any
 
 
@@ -29,8 +31,6 @@ def train_step(
 
     model.train()
 
-    train_loss, train_acc = 0, 0
-
     for batch, (X, y) in enumerate(
         tqdm(
             dataloader,
@@ -42,25 +42,18 @@ def train_step(
         with torch.autocast(device_type=device.type, dtype=torch.float16):
             X, y = X.to(device), y.to(device)
             output = model(X, y)
-            loss = loss_fn(output["loss"], y)
-            train_loss += loss.item()
 
-        scaler.scale(loss).backward()
+        loss = output["loss"]
 
-        scaler.step(optimizer)
-
-        scaler.update()
+        losses_m.update(loss.item(), X.size(0))
 
         optimizer.zero_grad(set_to_none=True)
 
-        # Calculate and accumulate accuracy metric across all batches
-        y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
-        train_acc += (y_pred_class == y).sum().item() / len(y_pred)
+        scaler(loss, optimizer)
 
-    # Adjust metrics to get average loss and accuracy per batch
-    train_loss = train_loss / len(dataloader)
-    train_acc = train_acc / len(dataloader)
-    return train_loss, train_acc
+        torch.cuda.synchronize()
+
+    return OrderedDict([("loss", losses_m.avg)])
 
 
 def test_step(
@@ -70,9 +63,10 @@ def test_step(
     device: torch.device,
 ):
 
+    losses_m = timm.utils.AverageMeter()
+
     model.eval()
 
-    test_loss, test_acc = 0, 0
     with torch.autocast(device_type=device.type, dtype=torch.float16):
         with torch.inference_mode():
             for batch, (X, y) in enumerate(
@@ -85,19 +79,15 @@ def test_step(
             ):
                 X, y = X.to(device), y.to(device)
 
-                test_pred_logits = model(X)
+                output = model(X, y)
+                loss = output["loss"]
 
-                loss = loss_fn(test_pred_logits, y)
-                test_loss += loss.item()
+                torch.cuda.synchronize()
+                losses_m.update(loss.data.item(), X.size(0))
 
-                # Calculate and accumulate accuracy
-                test_pred_labels = test_pred_logits.argmax(dim=1)
-                test_acc += (test_pred_labels == y).sum().item() / len(test_pred_labels)
+    metrics = OrderedDict([("loss", losses_m.avg)])
 
-    # Adjust metrics to get average loss and accuracy per batch
-    test_loss = test_loss / len(dataloader)
-    test_acc = test_acc / len(dataloader)
-    return test_loss, test_acc
+    return metrics
 
 
 def train(
@@ -128,7 +118,7 @@ def train(
     }
 
     for epoch in tqdm(range(epochs), position=0, desc="Iterating through epochs."):
-        train_loss, train_acc = train_step(
+        train_metrics = train_step(
             model=model,
             dataloader=train_dataloader,
             loss_fn=loss_fn,
@@ -136,7 +126,7 @@ def train(
             scaler=scaler,
             device=device,
         )
-        test_loss, test_acc = test_step(
+        test_metrics = test_step(
             model=model,
             dataloader=test_dataloader,
             loss_fn=loss_fn,
@@ -149,19 +139,15 @@ def train(
         # Log and save epoch loss and accuracy results
         logger.info(
             f"      Epoch: {epoch+1}  |  "
-            f"train_loss: {train_loss:.4f}  |  "
-            f"train_acc: {train_acc:.4f}  |  "
-            f"test_loss: {test_loss:.4f}  |  "
-            f"test_acc: {test_acc:.4f}  |  "
+            f"train_loss: {train_metrics['loss']:.4f}  |  "
+            f"test_loss: {train_metrics['loss']:.4f}  |  "
             f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
             f"last early stopping counter: {early_stopping.counter}"
         )
 
         results["learning_rate"].append(optimizer.param_groups[0]["lr"])
-        results["train_loss"].append(train_loss)
-        results["train_acc"].append(train_acc)
-        results["test_loss"].append(test_loss)
-        results["test_acc"].append(test_acc)
+        results["train_loss"].append(train_metrics["loss"])
+        results["test_loss"].append(test_metrics["loss"])
 
         # See if there's a writer, if so, log to it
         if writer:
@@ -172,19 +158,17 @@ def train(
             )
             writer.add_scalars(
                 main_tag="Loss",
-                tag_scalar_dict={"train_loss": train_loss, "test_loss": test_loss},
-                global_step=epoch,
-            )
-            writer.add_scalars(
-                main_tag="Accuracy",
-                tag_scalar_dict={"train_acc": train_acc, "test_acc": test_acc},
+                tag_scalar_dict={
+                    "train_loss": train_metrics["loss"],
+                    "test_loss": test_metrics["loss"],
+                },
                 global_step=epoch,
             )
 
             writer.close()
 
         # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
-        early_stopping(test_loss, model, epoch + 1)
+        early_stopping(test_metrics["loss"], model, epoch + 1)
         if early_stopping.early_stop:
             logger.info(
                 f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"

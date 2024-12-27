@@ -67,6 +67,13 @@ parser.add_argument(
     default="",
     help="Path to checkpoint used to initialize model backbone weights",
 )
+parser.add_argument(
+    "--target_transform",
+    type=bool,
+    default=True,
+    action=argparse.BooleanOptionalAction,
+    help="Target transform is applied",
+)
 parser.add_argument("--image_size", type=int, default=None, help="Image size")
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
@@ -98,6 +105,7 @@ UNFROZEN_BACKBONE_BLOCKS: List[int] = [
 FROZEN_BACKBONE: bool = True if UNFROZEN_BACKBONE_BLOCKS else args.frozen_backbone
 PRETRAINED_BACKBONE: bool = args.pretrained_backbone
 BACKBONE_PATH: str = args.backbone_path
+TARGET_TRANSFORM = args.target_transform
 IMAGE_SIZE: int = args.image_size
 MODEL_NAME: str = args.model_name
 MODEL_SAVE_NAME: str = args.model_save_name
@@ -188,6 +196,7 @@ logger.info(
     f"\n    unfrozen_backbone_blocks = {UNFROZEN_BACKBONE_BLOCKS}"
     f"\n    pretrained_backbone = {PRETRAINED_BACKBONE}"
     f"\n    backbone_path = {BACKBONE_PATH}"
+    f"\n    target_transform = {TARGET_TRANSFORM}"
     f"\n    image_size = {IMAGE_SIZE}"
     f"\n    model_name = {MODEL_NAME}"
     f"\n    model_save_name = {MODEL_SAVE_NAME}"
@@ -214,8 +223,14 @@ image_transform = A.Compose(
 )
 
 
-def target_transform(target):
+def num_to_cat(target):
     return tools.get_part_cat(target, class_dict)
+
+
+if TARGET_TRANSFORM:
+    target_transform = lambda x: num_to_cat(x)
+else:
+    target_transform = None
 
 
 # Create train/test dataloader
@@ -223,7 +238,7 @@ train_dataloader, test_dataloader, dataset = build_features.create_dataloaders(
     image_dir=image_dir,
     annot_dir=annot_dir,
     transform=image_transform,
-    target_transform=target_transform,
+    target_transform=TARGET_TRANSFORM,
     batch_size=BATCH_SIZE,
 )
 
@@ -274,7 +289,7 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
-early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
+early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
 
 # Set up scaler for better efficiency
 objdet_model = NativeDDP(objdet_model, device_ids=[device])
