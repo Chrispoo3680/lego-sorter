@@ -50,6 +50,12 @@ parser.add_argument(
     help="Number of blocks to be frozen on format 'block1,block2,block3'",
 )
 parser.add_argument(
+    "--lr_step_interval",
+    type=int,
+    default=10,
+    help="Step interval for the learning rate",
+)
+parser.add_argument(
     "--unfrozen_backbone_blocks",
     type=str,
     default="",
@@ -99,6 +105,7 @@ NUM_EPOCHS: int = args.num_epochs
 BATCH_SIZE: int = args.batch_size
 LEARNING_RATE: float = args.learning_rate
 WEIGHT_DECAY: float = args.weight_decay
+LR_STEP_INTERVAL: int = args.lr_step_interval
 UNFROZEN_BACKBONE_BLOCKS: List[int] = [
     int(b) for b in args.unfrozen_backbone_blocks.split(",") if b != ""
 ]
@@ -192,6 +199,7 @@ logger.info(
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    weight_decay = {WEIGHT_DECAY}"
+    f"\n    lr_step_interval = {LR_STEP_INTERVAL}"
     f"\n    frozen_backbone = {FROZEN_BACKBONE}"
     f"\n    unfrozen_backbone_blocks = {UNFROZEN_BACKBONE_BLOCKS}"
     f"\n    pretrained_backbone = {PRETRAINED_BACKBONE}"
@@ -282,8 +290,10 @@ optimizer = torch.optim.AdamW(
     objdet_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 
-lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-    optimizer, milestones=[11, 21, 31, 41], gamma=0.1
+lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    optimizer,
+    step_size=LR_STEP_INTERVAL,
+    gamma=0.1,
 )
 
 

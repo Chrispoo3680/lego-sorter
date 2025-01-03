@@ -44,6 +44,12 @@ parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
 parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--weight_decay", type=float, default=0.0001, help="Weight decay")
 parser.add_argument(
+    "--lr_step_interval",
+    type=int,
+    default=10,
+    help="Step interval for the learning rate",
+)
+parser.add_argument(
     "--frozen_blocks",
     type=str,
     default="",
@@ -93,6 +99,7 @@ NUM_EPOCHS = args.num_epochs
 BATCH_SIZE = args.batch_size
 LEARNING_RATE = args.learning_rate
 WEIGHT_DECAY = args.weight_decay
+LR_STEP_INTERVAL = args.lr_step_interval
 FROZEN_BLOCKS = [int(b) for b in args.frozen_blocks.split(",") if b != ""]
 PRETRAINED = args.pretrained
 CHECKPOINT_PATH = args.checkpoint_path
@@ -220,6 +227,7 @@ logger.info(
     f"\n    batch_size = {BATCH_SIZE}"
     f"\n    learning_rate = {LEARNING_RATE}"
     f"\n    weight_decay = {WEIGHT_DECAY}"
+    f"\n    lr_step_interval = {LR_STEP_INTERVAL}"
     f"\n    frozen_blocks = {FROZEN_BLOCKS}"
     f"\n    pretrained = {PRETRAINED}"
     f"\n    checkpoint_path = {CHECKPOINT_PATH}"
@@ -328,8 +336,10 @@ optimizer = torch.optim.AdamW(
     cnn_model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 
-lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-    optimizer, milestones=[11, 21, 31, 41], gamma=0.1
+lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    optimizer,
+    step_size=LR_STEP_INTERVAL,
+    gamma=0.1,
 )
 
 
