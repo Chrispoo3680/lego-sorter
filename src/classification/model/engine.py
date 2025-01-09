@@ -6,13 +6,14 @@ import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.amp.grad_scaler import GradScaler
+from torch.optim.lr_scheduler import StepLR, MultiStepLR
 
 from pathlib import Path
 from tqdm import tqdm
 import logging
 from src.common import tools
 
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Callable, Any, Union
 
 
 def train_step(
@@ -103,7 +104,7 @@ def train(
     test_dataloader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.Module,
-    lr_scheduler: torch.optim.lr_scheduler.MultiStepLR,
+    lr_scheduler: Union[MultiStepLR, StepLR],
     epochs: int,
     device: torch.device,
     logging_file_path: Path,
@@ -140,8 +141,7 @@ def train(
             device=device,
         )
 
-        # Adjust learning rate
-        lr_scheduler.step()
+        early_stopping(test_loss, model, epoch + 1)
 
         # Log and save epoch loss and accuracy results
         logger.info(
@@ -151,7 +151,7 @@ def train(
             f"test_loss: {test_loss:.4f}  |  "
             f"test_acc: {test_acc:.4f}  |  "
             f"learning_rate: {optimizer.param_groups[0]['lr']}  |  "
-            f"last early stopping counter: {early_stopping.counter}"
+            f"early stopping counter: {early_stopping.counter} / {early_stopping.patience}"
         )
 
         results["learning_rate"].append(optimizer.param_groups[0]["lr"])
@@ -181,7 +181,6 @@ def train(
             writer.close()
 
         # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
-        early_stopping(test_loss, model, epoch + 1)
         if early_stopping.early_stop:
             logger.info(
                 f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"
@@ -191,5 +190,8 @@ def train(
             )
 
             break
+
+        # Adjust learning rate
+        lr_scheduler.step()
 
     return results
