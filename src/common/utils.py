@@ -10,7 +10,7 @@ from pathlib import Path
 import logging
 from src.common import tools
 
-from typing import List
+from typing import List, Union, Dict, Any
 
 
 class EarlyStopping:
@@ -49,7 +49,7 @@ class EarlyStopping:
 
 
 def save_model(
-    model: torch.nn.Module,
+    model: Union[torch.nn.Module, Dict[str, Any]],
     target_dir_path: Path,
     model_name: str,
     logging_file_path: Path,
@@ -67,9 +67,14 @@ def save_model(
 
     model_save_path: Path = target_dir_path / model_name
 
+    if isinstance(model, torch.nn.Module):
+        model_state_dict = model.state_dict()
+    else:
+        model_state_dict = model
+
     # Save the model state_dict()
     logger.info(f"  Saving model to: {model_save_path}")
-    torch.save(obj=model.state_dict(), f=model_save_path)
+    torch.save(obj=model_state_dict, f=model_save_path)
 
 
 def model_save_version(save_dir_path: Path, save_name: str) -> str:

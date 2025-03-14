@@ -10,13 +10,14 @@ from torch.optim.lr_scheduler import StepLR, MultiStepLR
 import timm.utils
 
 from pathlib import Path
+import os
 from tqdm import tqdm
 import logging
 from src.common import tools
 
 from collections import OrderedDict
 
-from typing import Dict, List, Optional, Callable, Any, Union
+from typing import Dict, List, Optional, Callable, Any, Union, Tuple
 
 
 def train_step(
@@ -101,10 +102,11 @@ def train(
     epochs: int,
     device: torch.device,
     logging_file_path: Path,
+    temp_checkpoint_file_path: Path,
     early_stopping: Any,
     scaler: timm.utils.NativeScaler,
     writer: Optional[SummaryWriter] = None,
-) -> Dict[str, List[float]]:
+) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
 
     logger: logging.Logger = tools.create_logger(
         log_path=logging_file_path, logger_name=__name__
@@ -169,6 +171,7 @@ def train(
 
         # Check if test loss is still decreasing. If not decreasing for multiple epochs, break the loop
         if early_stopping.early_stop:
+
             logger.info(
                 f"Models test loss not decreasing significantly enough. Stopping training early at epoch: {epoch+1}"
             )
@@ -176,9 +179,14 @@ def train(
                 f"Saving model with lowest loss from epoch: {early_stopping.best_score_epoch}"
             )
 
+            os.remove(temp_checkpoint_file_path)
+
             break
+
+        else:
+            torch.save(obj=early_stopping.best_model_state, f=temp_checkpoint_file_path)
 
         # Adjust learning rate
         lr_scheduler.step()
 
-    return results
+    return results, early_stopping.best_model_state

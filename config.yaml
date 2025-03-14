@@ -22,6 +22,9 @@ b200_dataset_name: b200-lego-detection-dataset
 # MODELS
 model_path: models/
 
+# CHECKPOINTS
+temp_checkpoint_path: temp_checkpoints/
+
 # RESULTS
 results_path: results/
 

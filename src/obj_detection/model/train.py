@@ -135,6 +135,9 @@ model_save_name_version: str = utils.model_save_version(
     save_dir_path=model_save_path, save_name=MODEL_SAVE_NAME
 )
 
+temp_checkpoint_path: Path = repo_root_dir / config["temp_checkpoint_path"]
+os.makedirs(temp_checkpoint_path, exist_ok=True)
+
 results_save_path: Path = repo_root_dir / config["results_path"] / "obj_detection"
 os.makedirs(results_save_path, exist_ok=True)
 
@@ -306,7 +309,7 @@ objdet_model = NativeDDP(objdet_model, device_ids=[device])
 
 scaler = timm.utils.NativeScaler()
 
-results = engine.train(
+results, best_state = engine.train(
     model=objdet_model,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
@@ -316,6 +319,7 @@ results = engine.train(
     epochs=NUM_EPOCHS,
     device=device,
     logging_file_path=logging_file_path,
+    temp_checkpoint_file_path=temp_checkpoint_path / (model_save_name_version + ".pt"),
     writer=writer,
     early_stopping=early_stopping,
     scaler=scaler,
@@ -324,7 +328,7 @@ results = engine.train(
 
 # Save the trained model
 utils.save_model(
-    model=objdet_model,
+    model=best_state,
     target_dir_path=model_save_path,
     model_name=model_save_name_version + ".pt",
     logging_file_path=logging_file_path,
