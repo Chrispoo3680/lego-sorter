@@ -19,7 +19,6 @@ tqdm
 torchmetrics
 mlxtend
 kaggle
-kaggle-downloader
 pyyaml
 rebrick
 pillow

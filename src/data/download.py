@@ -11,7 +11,6 @@ from src.common import tools
 import os
 import logging
 import wget
-from kaggle_downloader_package.kaggle_downloader import KaggleDownloader
 
 
 # To use the kaggle API you have to provide your username and a generated API key in the "kaggle_username" and "kaggle_api" variables in 'config.yaml'.
@@ -20,37 +19,6 @@ from kaggle_downloader_package.kaggle_downloader import KaggleDownloader
 
 
 def kaggle_download_data(
-    data_handle: str,
-    save_path: Path,
-    data_name: str,
-    logging_file_path: Path,
-):
-
-    config = tools.load_config()
-
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
-
-    # Set environment variables for Kaggle authentication
-    os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
-    os.environ["KAGGLE_KEY"] = config["kaggle_api"]
-
-    # Download the lego piece dataset from kaggle.com
-    kd = KaggleDownloader()
-    kd.set_path_downloads(save_path / data_name)
-
-    logger.info(
-        f"Downloading files..."
-        f"\n    From:  {data_handle}"
-        f"\n    Named:  {data_name}"
-        f"\n    To path:  {save_path}"
-    )
-
-    kd.download_dataset(data_handle)
-
-    logger.info(f"Successfully downloaded dataset files from {data_handle}!")
-
-
-def old_kaggle_download_data(
     data_handle: str,
     save_path: Path,
     data_name: str,
@@ -134,8 +102,8 @@ if __name__ == "__main__":
     log_path = Path("download.log")
 
     kaggle_download_data(
-        data_handle=config["b200c_dataset_handle"],
+        data_handle=config["b200_dataset_handle"],
         save_path=save_path,
-        data_name=config["b200c_dataset_name"],
+        data_name=config["b200_dataset_name"],
         logging_file_path=log_path,
     )
