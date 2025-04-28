@@ -53,6 +53,7 @@ def kaggle_download_data(
     zip_names = [f.name for f in zip_paths]
 
     if len(zip_names) == 1:
+        logger.info("Zip file downloaded. Unzipping files...")
         tools.rename_and_unzip_file((save_path / zip_names[0]), (save_path / data_name))
         logger.info(f"Successfully downloaded dataset files from {data_handle}!")
     else:
@@ -95,7 +96,7 @@ def api_scraper_download_data(
 
 if __name__ == "__main__":
     config = tools.load_config()
-    save_path: Path = repo_root_dir / config["data_path"]
+    save_path: Path = repo_root_dir / config["data_path"] / "testing"
     log_path = Path("download.log")
 
     kaggle_download_data(
