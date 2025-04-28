@@ -99,8 +99,8 @@ if __name__ == "__main__":
     log_path = Path("download.log")
 
     kaggle_download_data(
-        data_handle=config["b200c_dataset_handle"],
+        data_handle=config["b200_dataset_handle"],
         save_path=save_path,
-        data_name=config["b200c_dataset_name"],
+        data_name=config["b200_dataset_name"],
         logging_file_path=log_path,
     )
