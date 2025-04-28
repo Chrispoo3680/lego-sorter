@@ -25,4 +25,4 @@ pillow
 argparse
 wget
 xmltodict
-request
+requests
