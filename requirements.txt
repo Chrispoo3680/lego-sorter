@@ -1,4 +1,6 @@
-# Install PyTorch by running the command "pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118"
+torch --index-url=https://download.pytorch.org/whl/cu118
+torchvision --index-url=https://download.pytorch.org/whl/cu118
+torchaudio --index-url=https://download.pytorch.org/whl/cu118
 
 torchinfo
 tensorboard
@@ -23,4 +25,4 @@ pillow
 argparse
 wget
 xmltodict
-request
+requests
