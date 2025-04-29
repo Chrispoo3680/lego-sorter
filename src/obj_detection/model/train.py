@@ -180,7 +180,7 @@ if os.listdir(data_path):
 else:
     download.kaggle_download_data(
         data_handle=config["b200_dataset_handle"],
-        save_path=data_path,
+        save_dir=data_path,
         data_name=config["b200_dataset_name"],
         logging_file_path=logging_file_path,
     )
