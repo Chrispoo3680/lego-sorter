@@ -25,67 +25,6 @@ import contextlib
 
 def kaggle_download_data(
     data_handle: str,
-    save_dir: Path,
-    data_name: str,
-    logging_file_path: Path,
-    force: bool = False,
-):
-
-    config = tools.load_config()
-
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
-
-    buf = io.StringIO()
-
-    # Set environment variables for Kaggle authentication
-    os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
-    os.environ["KAGGLE_KEY"] = config["kaggle_api"]
-
-    import kaggle
-
-    # Download the lego piece dataset from kaggle.com
-    kaggle.api.authenticate()
-
-    # Create path if it doesn't exist
-    output_path = os.path.join(save_dir, data_name)
-    os.makedirs(output_path, exist_ok=True)
-
-    logger.info(
-        f"Downloading files..."
-        f"\n    From:  {data_handle}"
-        f"\n    Named:  {data_name}"
-        f"\n    To path:  {save_dir}"
-    )
-
-    # Get list of files in the dataset
-    file_list = kaggle.api.dataset_list_files(data_handle).files
-
-    logger.info(f"Found {len(file_list)} files in dataset '{data_handle}'")
-
-    for f in tqdm(file_list, desc="Downloading files", leave=False):
-        file_path = os.path.join(output_path, f.name)
-
-        if os.path.exists(file_path) and not force:
-            continue
-
-        with contextlib.redirect_stdout(io.StringIO()):
-            kaggle.api.dataset_download_file(
-                data_handle, f.name, path=output_path, force=force, quiet=True
-            )
-
-        # unzip if needed (since each file is zipped individually)
-        zip_file = file_path + ".zip"
-        if os.path.exists(zip_file):
-
-            with ZipFile(zip_file, "r") as zip_ref:
-                zip_ref.extractall(output_path)
-            os.remove(zip_file)
-
-    logger.info(f"Successfully downloaded dataset files from '{data_handle}'!")
-
-
-def old_kaggle_download_data(
-    data_handle: str,
     save_path: Path,
     data_name: str,
     logging_file_path: Path,
@@ -169,7 +108,7 @@ if __name__ == "__main__":
 
     kaggle_download_data(
         data_handle="zalando-research/fashionmnist",
-        save_dir=save_path,
+        save_path=save_path,
         data_name="fashionmnist",
         logging_file_path=log_path,
     )
