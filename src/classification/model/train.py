@@ -136,6 +136,7 @@ logging_dir_path: Path = repo_root_dir / config["logging_path"] / "classificatio
 os.makedirs(logging_dir_path, exist_ok=True)
 
 logging_file_path: Path = logging_dir_path / (model_save_name_version + "_training.log")
+os.environ["LOGGING_FILE_PATH"] = str(logging_file_path)
 
 
 # Setup logging for info and debugging
@@ -153,7 +154,6 @@ if EXPERIMENT_NAME and EXPERIMENT_VARIABLE:
         experiment_name=EXPERIMENT_NAME,
         model_name=model_save_name_version,
         var=EXPERIMENT_VARIABLE,
-        logging_file_path=logging_file_path,
     )
 elif EXPERIMENT_NAME or EXPERIMENT_VARIABLE:
     raise NameError(
@@ -173,21 +173,18 @@ else:
         data_handle=config["b200c_dataset_handle"],
         save_path=data_path,
         data_name=config["b200c_dataset_name"],
-        logging_file_path=logging_file_path,
     )
 
     download.api_scraper_download_data(
         download_url=config["class_scraper_dataset0_download"],
         save_path=data_path,
         data_name=config["class_scraper_dataset0_name"],
-        logging_file_path=logging_file_path,
     )
 
     download.api_scraper_download_data(
         download_url=config["class_scraper_dataset1_download"],
         save_path=data_path,
         data_name=config["class_scraper_dataset1_name"],
-        logging_file_path=logging_file_path,
     )
 
 
@@ -375,7 +372,6 @@ utils.save_model(
     model=best_state,
     target_dir_path=model_save_path,
     model_name=model_save_name_version + ".pt",
-    logging_file_path=logging_file_path,
 )
 
 

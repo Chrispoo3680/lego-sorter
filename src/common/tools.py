@@ -1,7 +1,6 @@
 import yaml
 from tqdm import tqdm
 import logging
-import re
 
 import os
 import sys
@@ -22,10 +21,22 @@ class TqdmLoggingHandler(logging.Handler):
         tqdm.write(msg)
 
 
-def create_logger(logger_name: str, log_path: Optional[Path] = None) -> logging.Logger:
+def create_logger(
+    logger_name: str, log_path: Optional[Union[str, Path]] = None
+) -> logging.Logger:
+
+    config = load_config()
+
+    level_dict = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+    }
+
     # Set up logging
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level_dict[config["logging_level"]])
 
     # Tqdm handler for terminal output
     tqdm_handler = TqdmLoggingHandler()

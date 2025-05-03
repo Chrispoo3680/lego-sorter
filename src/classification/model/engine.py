@@ -11,10 +11,17 @@ from torch.optim.lr_scheduler import StepLR, MultiStepLR
 from pathlib import Path
 import os
 from tqdm import tqdm
-import logging
 from src.common import tools
 
 from typing import Dict, List, Optional, Callable, Any, Union, Tuple
+
+
+try:
+    logging_file_path = os.environ["LOGGING_FILE_PATH"]
+except KeyError:
+    logging_file_path = None
+
+logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
 def train_step(
@@ -108,16 +115,11 @@ def train(
     lr_scheduler: Union[MultiStepLR, StepLR],
     epochs: int,
     device: torch.device,
-    logging_file_path: Path,
     temp_checkpoint_file_path: Path,
     early_stopping: Any,
     scaler: GradScaler,
     writer: Optional[SummaryWriter] = None,
 ) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
-
-    logger: logging.Logger = tools.create_logger(
-        log_path=logging_file_path, logger_name=__name__
-    )
 
     results: Dict[str, List[float]] = {
         "learning_rate": [],

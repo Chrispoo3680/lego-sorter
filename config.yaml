@@ -30,8 +30,9 @@ results_path: results/
 
 # LOGGING
 logging_path: logs/
+logging_level: debug
 
 # API KEYS
-rebrickable_api: INSERT API KEY HERE # Personal API key from "rebrickable.com" is needed.
+rebrickable_api_key: INSERT API KEY HERE # Personal API key from "rebrickable.com" is needed.
 kaggle_username: YOUR KAGGLE USERNAME # Instructions on how to get in "/src/data/download.py".
-kaggle_api: INSERT API KEY HERE # Instructions on how to get in "/src/data/download.py".
+kaggle_api_key: INSERT API KEY HERE # Instructions on how to get in "/src/data/download.py".

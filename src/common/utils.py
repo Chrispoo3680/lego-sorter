@@ -7,10 +7,17 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 import os
 from pathlib import Path
-import logging
 from src.common import tools
 
 from typing import List, Union, Dict, Any
+
+
+try:
+    logging_file_path = os.environ["LOGGING_FILE_PATH"]
+except KeyError:
+    logging_file_path = None
+
+logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
 class EarlyStopping:
@@ -52,12 +59,7 @@ def save_model(
     model: Union[torch.nn.Module, Dict[str, Any]],
     target_dir_path: Path,
     model_name: str,
-    logging_file_path: Path,
 ):
-
-    logger: logging.Logger = tools.create_logger(
-        log_path=logging_file_path, logger_name=__name__
-    )
 
     # Create target directory
     os.makedirs(target_dir_path, exist_ok=True)
@@ -92,7 +94,6 @@ def create_writer(
     experiment_name: str,
     model_name: str,
     var: str,
-    logging_file_path: Path,
 ) -> SummaryWriter:
     """Creates a torch.utils.tensorboard.writer.SummaryWriter() instance saving to a specific log_dir.
 
@@ -106,13 +107,10 @@ def create_writer(
         torch.utils.tensorboard.writer.SummaryWriter(): Instance of a writer saving to log_dir.
     """
 
-    log_dir: str = os.path.join(
+    writer_log_dir: str = os.path.join(
         root_dir, "runs/classification", experiment_name, model_name, var
     )
 
-    logger: logging.Logger = tools.create_logger(
-        log_path=logging_file_path, logger_name=__name__
-    )
-    logger.info(f"Created SummaryWriter, saving to:  {log_dir}...")
+    logger.info(f"Created SummaryWriter, saving to:  {writer_log_dir}...")
 
-    return SummaryWriter(log_dir=log_dir)
+    return SummaryWriter(log_dir=writer_log_dir)

@@ -9,13 +9,17 @@ sys.path.append(str(repo_root_dir))
 
 from src.common import tools
 import os
-import logging
 import wget
-import requests
-from zipfile import ZipFile
-from tqdm import tqdm
-import io
-import contextlib
+
+
+config = tools.load_config()
+
+try:
+    logging_file_path = os.environ["LOGGING_FILE_PATH"]
+except KeyError:
+    logging_file_path = None
+
+logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
 # To use the kaggle API you have to provide your username and a generated API key in the "kaggle_username" and "kaggle_api" variables in 'config.yaml'.
@@ -27,21 +31,20 @@ def kaggle_download_data(
     data_handle: str,
     save_path: Path,
     data_name: str,
-    logging_file_path: Path,
 ):
-
-    config = tools.load_config()
-
-    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
     # Set environment variables for Kaggle authentication
     os.environ["KAGGLE_USERNAME"] = config["kaggle_username"]
-    os.environ["KAGGLE_KEY"] = config["kaggle_api"]
+    os.environ["KAGGLE_KEY"] = config["kaggle_api_key"]
 
     import kaggle
 
+    api_cli = kaggle.KaggleApi()
+
     # Download the lego piece dataset from kaggle.com
-    kaggle.api.authenticate()
+    api_cli.authenticate()
+
+    logger.debug(f"Kaggle config: {api_cli.config_values}")
 
     logger.info(
         f"Downloading files..."
@@ -52,7 +55,7 @@ def kaggle_download_data(
 
     # Create path if it doesn't exist
     os.makedirs(save_path, exist_ok=True)
-    kaggle.api.dataset_download_files(
+    api_cli.dataset_download_files(
         data_handle, path=save_path, unzip=False, quiet=False
     )
 
@@ -73,12 +76,7 @@ def api_scraper_download_data(
     download_url: str,
     save_path: Path,
     data_name: str,
-    logging_file_path: Path,
 ):
-
-    logger: logging.Logger = tools.create_logger(
-        log_path=logging_file_path, logger_name=__name__
-    )
 
     logger.info(
         f"Downloading files..."
@@ -104,11 +102,9 @@ def api_scraper_download_data(
 if __name__ == "__main__":
     config = tools.load_config()
     save_path: Path = repo_root_dir / config["data_path"] / "testing"
-    log_path = Path("download.log")
 
     kaggle_download_data(
         data_handle="zalando-research/fashionmnist",
         save_path=save_path,
         data_name="fashionmnist",
-        logging_file_path=log_path,
     )

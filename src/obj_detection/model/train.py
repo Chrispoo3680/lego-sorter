@@ -4,14 +4,10 @@ This is a file for training the lego object detection model.
 
 import torch
 from torch import nn
-from torchvision.transforms import v2
-from torchvision import transforms
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
 import timm.utils
-import effdet
-from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 from albumentations import cv2
@@ -145,6 +141,7 @@ logging_dir_path: Path = repo_root_dir / config["logging_path"] / "obj_detection
 os.makedirs(logging_dir_path, exist_ok=True)
 
 logging_file_path: Path = logging_dir_path / (model_save_name_version + "_training.log")
+os.environ["LOGGING_FILE_PATH"] = str(logging_file_path)
 
 
 # Setup logging for info and debugging
@@ -162,7 +159,6 @@ if EXPERIMENT_NAME and EXPERIMENT_VARIABLE:
         experiment_name=EXPERIMENT_NAME,
         model_name=model_save_name_version,
         var=EXPERIMENT_VARIABLE,
-        logging_file_path=logging_file_path,
     )
 elif EXPERIMENT_NAME or EXPERIMENT_VARIABLE:
     raise NameError(
@@ -182,7 +178,6 @@ else:
         data_handle=config["b200_dataset_handle"],
         save_path=data_path,
         data_name=config["b200_dataset_name"],
-        logging_file_path=logging_file_path,
     )
 
 
@@ -318,7 +313,6 @@ results, best_state = engine.train(
     lr_scheduler=lr_scheduler,
     epochs=NUM_EPOCHS,
     device=device,
-    logging_file_path=logging_file_path,
     temp_checkpoint_file_path=temp_checkpoint_path / (model_save_name_version + ".pt"),
     writer=writer,
     early_stopping=early_stopping,
@@ -331,7 +325,6 @@ utils.save_model(
     model=best_state,
     target_dir_path=model_save_path,
     model_name=model_save_name_version + ".pt",
-    logging_file_path=logging_file_path,
 )
 
 
