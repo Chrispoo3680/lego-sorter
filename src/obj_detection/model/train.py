@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
+import torch.distributed as dist
 
 import timm.utils
 import albumentations as A
@@ -213,9 +214,22 @@ logger.info(
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.cuda.set_device(device)
-
 logger.info(f"Using device = {device}")
+
+assert device == torch.device(
+    "cuda"
+), f"Device is strongly recommended to be cuda, but only available was {device}"
+
+GPU_COUNT = torch.cuda.device_count()
+logger.debug(f"gpu_count = {GPU_COUNT}")
+
+if GPU_COUNT < 2:
+    logger.warning(
+        f"Amount of available GPUs is recommended to be two or more, but only got {GPU_COUNT}"
+    )
+
+RANK = dist.get_rank()
+logger.debug(f"gpu_count = {GPU_COUNT}")
 
 
 # Create a manual transform for the images if it is wanted to use that
@@ -306,7 +320,7 @@ logger.info("Starting training...\n")
 early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
 
 # Set up scaler for better efficiency
-torch.distributed.init_process_group(backend="nccl", world_size=2)
+torch.distributed.init_process_group(backend="nccl", world_size=GPU_COUNT, rank=RANK)
 
 objdet_model = NativeDDP(objdet_model, device_ids=[device])
 
