@@ -9,7 +9,7 @@ from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
 import timm.utils
 import albumentations as A
-from albumentations.pytorch.transforms import ToTensorV2
+from albumentations.pytorch import ToTensorV2
 from albumentations import cv2
 
 import sys
@@ -76,7 +76,7 @@ parser.add_argument(
     action=argparse.BooleanOptionalAction,
     help="Target transform is applied",
 )
-parser.add_argument("--image_size", type=int, default=None, help="Image size")
+parser.add_argument("--image_size", type=int, default=1024, help="Image size")
 parser.add_argument("--model_name", type=str, required=True, help="Loaded models name")
 parser.add_argument("--experiment_name", type=str, default=None, help="Experiment name")
 parser.add_argument(
@@ -213,6 +213,8 @@ logger.info(
 
 # Setup target device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.cuda.set_device(device)
+
 logger.info(f"Using device = {device}")
 
 
@@ -240,13 +242,17 @@ else:
 
 
 # Create train/test dataloader
+logger.debug(f"Creating dataloaders...")
+
 train_dataloader, test_dataloader, dataset = build_features.create_dataloaders(
     image_dir=image_dir,
     annot_dir=annot_dir,
     transform=image_transform,
-    target_transform=TARGET_TRANSFORM,
+    target_transform=target_transform,
     batch_size=BATCH_SIZE,
 )
+
+logger.debug(f"Successfully created dataloaders.")
 
 
 # Create the object detection model
@@ -300,9 +306,12 @@ logger.info("Starting training...\n")
 early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
 
 # Set up scaler for better efficiency
+torch.distributed.init_process_group(backend="nccl", world_size=2)
+
 objdet_model = NativeDDP(objdet_model, device_ids=[device])
 
 scaler = timm.utils.NativeScaler()
+
 
 results, best_state = engine.train(
     model=objdet_model,
