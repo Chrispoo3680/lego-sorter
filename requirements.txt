@@ -18,7 +18,7 @@ ipykernel
 tqdm
 torchmetrics
 mlxtend
-kaggle
+kaggle==1.6.17
 pyyaml
 rebrick
 pillow

@@ -359,7 +359,6 @@ results, best_state = engine.train(
     lr_scheduler=lr_scheduler,
     epochs=NUM_EPOCHS,
     device=device,
-    logging_file_path=logging_file_path,
     temp_checkpoint_file_path=temp_checkpoint_path / (model_save_name_version + ".pt"),
     writer=writer,
     early_stopping=early_stopping,

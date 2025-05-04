@@ -46,6 +46,8 @@ def kaggle_download_data(
 
     logger.debug(f"Kaggle config: {api_cli.config_values}")
 
+    save_path = save_path / data_name
+
     logger.info(
         f"Downloading files..."
         f"\n    From:  {data_handle}"
@@ -55,21 +57,21 @@ def kaggle_download_data(
 
     # Create path if it doesn't exist
     os.makedirs(save_path, exist_ok=True)
-    api_cli.dataset_download_files(
-        data_handle, path=save_path, unzip=False, quiet=False
-    )
+    api_cli.dataset_download_files(data_handle, path=save_path, unzip=True, quiet=False)
 
+    """
     zip_paths = save_path.glob("*.zip")
     zip_names = [f.name for f in zip_paths]
 
     if len(zip_names) == 1:
-        logger.info("Zip file downloaded. Unzipping files...")
+        logger.debug("Zip file downloaded. Unzipping files...")
         tools.rename_and_unzip_file((save_path / zip_names[0]), (save_path / data_name))
         logger.info(f"Successfully downloaded dataset files from {data_handle}!")
     else:
         logger.error(
             f"Encountered an invalid amount of .zip files to unzip in directory: {save_path}, number on .zip files to unzip should be 1."
         )
+    """
 
 
 def api_scraper_download_data(
@@ -100,7 +102,6 @@ def api_scraper_download_data(
 
 
 if __name__ == "__main__":
-    config = tools.load_config()
     save_path: Path = repo_root_dir / config["data_path"] / "testing"
 
     kaggle_download_data(
