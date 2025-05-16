@@ -1,5 +1,5 @@
 """
-Contains functionality for creating PyTorch DataLoaders for 
+Contains functionality for creating PyTorch DataLoaders for
 image classification data.
 """
 
@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, ConcatDataset, Dataset
+from torch.utils.data.distributed import DistributedSampler
 
 from typing import Any, List, Dict, Union, Callable, Optional
 
@@ -48,8 +49,9 @@ def create_dataloaders(
         dataset=train_data,
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=True,
+        shuffle=False,
         pin_memory=True,
+        sampler=DistributedSampler(train_data),
     )
 
     test_dataloader = DataLoader(
@@ -58,6 +60,7 @@ def create_dataloaders(
         num_workers=num_workers,
         shuffle=False,
         pin_memory=True,
+        sampler=DistributedSampler(test_data),
     )
 
     return train_dataloader, test_dataloader

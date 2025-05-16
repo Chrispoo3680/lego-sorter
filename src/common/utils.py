@@ -4,12 +4,13 @@ Contains various utility functions for PyTorch model training and saving.
 
 import torch
 from torch.utils.tensorboard.writer import SummaryWriter
+import torch.distributed as dist
 
 import os
 from pathlib import Path
-from src.common import tools
+from . import tools
 
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 
 
 try:
@@ -20,39 +21,22 @@ except KeyError:
 logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
-class EarlyStopping:
-    def __init__(self, patience: int = 5, delta: float = 0):
-        """
-        Args:
-            patience (int): How many epochs to wait after the last improvement.
-            min_delta (float): Minimum change to qualify as an improvement.
-        """
-        self.patience = patience
-        self.delta = delta
-        self.best_score = None
-        self.best_score_epoch = None
-        self.early_stop = False
-        self.counter = 0
-        self.best_model_state = None
+def ddp_setup(rank, world_size):
+    """
+    Args:
+        rank: Unique identifier of each process
+        world_size: Total number of processes
+    """
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
 
-    def __call__(self, val_loss, model, epoch):
-        score = val_loss
-        if self.best_score is None:
-            self.best_score = score
-            self.best_score_epoch = epoch
-            self.best_model_state = model.state_dict()
-        elif score > self.best_score - self.delta:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.early_stop = True
-        else:
-            self.best_score = score
-            self.best_score_epoch = epoch
-            self.best_model_state = model.state_dict()
-            self.counter = 0
+    torch.cuda.set_device(rank)
 
-    def load_best_model(self, model):
-        model.load_state_dict(self.best_model_state)
+    dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+
+
+def ddp_cleanup():
+    dist.destroy_process_group()
 
 
 def save_model(
@@ -114,3 +98,38 @@ def create_writer(
     logger.info(f"Created SummaryWriter, saving to:  {writer_log_dir}...")
 
     return SummaryWriter(log_dir=writer_log_dir)
+
+
+class EarlyStopping:
+    def __init__(self, patience: int = 5, delta: float = 0) -> None:
+        """
+        Args:
+            patience (int): How many epochs to wait after the last improvement.
+            min_delta (float): Minimum change to qualify as an improvement.
+        """
+        self.patience: int = patience
+        self.delta: float = delta
+        self.best_score: float = float("inf")
+        self.best_score_epoch: int = 0
+        self.early_stop: bool = False
+        self.counter: int = 0
+        self.best_model_state: Dict[str, Any] = {}
+
+    def __call__(self, val_loss, model, epoch) -> None:
+        score = val_loss
+        if self.best_score is None:
+            self.best_score = score
+            self.best_score_epoch = epoch
+            self.best_model_state = model.state_dict()
+        elif score > self.best_score - self.delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.best_score_epoch = epoch
+            self.best_model_state = model.state_dict()
+            self.counter = 0
+
+    def load_best_model(self, model) -> None:
+        model.load_state_dict(self.best_model_state)

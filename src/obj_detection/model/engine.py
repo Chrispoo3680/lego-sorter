@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.lr_scheduler import StepLR, MultiStepLR
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 import timm.utils
 
@@ -28,7 +29,7 @@ logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
 def train_step(
-    model: nn.Module,
+    model: DDP,
     dataloader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -94,9 +95,7 @@ def test_step(
                 torch.cuda.synchronize()
                 losses_m.update(loss.data.item(), X.size(0))
 
-    metrics = OrderedDict([("loss", losses_m.avg)])
-
-    return metrics
+    return OrderedDict([("loss", losses_m.avg)])
 
 
 def train(
@@ -117,9 +116,7 @@ def train(
     results: Dict[str, List[float]] = {
         "learning_rate": [],
         "train_loss": [],
-        "train_acc": [],
         "test_loss": [],
-        "test_acc": [],
     }
 
     for epoch in tqdm(range(epochs), position=0, desc="Iterating through epochs."):

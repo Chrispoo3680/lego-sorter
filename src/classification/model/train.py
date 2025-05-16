@@ -17,14 +17,13 @@ sys.path.append(str(repo_root_dir))
 
 import os
 import logging
-from tqdm import tqdm
 import argparse
 import json
 
-from src.data import download, generate_lego_part_classes
+from src.data import download
 from src.common import utils, tools
 from src.classification.preprocess import build_features
-import engine, model
+import engine, classification.model.models as models
 
 from typing import Dict, List
 
@@ -247,7 +246,7 @@ logger.info(f"Using device = {device}")
 
 # Create the machine learning model
 if args.timm_model:
-    cnn_model, auto_transform = model.get_timm_model(
+    cnn_model, auto_transform = models.get_timm_model(
         model_name=MODEL_NAME,
         num_classes=len(class_names),
         device=device,
@@ -256,7 +255,7 @@ if args.timm_model:
         frozen_blocks=FROZEN_BLOCKS,
     )
 else:
-    cnn_model, auto_transform = model.get_tv_efficientnet_b0(
+    cnn_model, auto_transform = models.get_tv_efficientnet_b0(
         num_classes=len(class_names),
         device=device,
         pretrained=PRETRAINED,
@@ -324,7 +323,7 @@ else:
 train_dataloader, test_dataloader = build_features.create_dataloaders(
     data_dir_path=image_paths,
     transform=image_transform,
-    target_transform=TARGET_TRANSFORM,
+    target_transform=target_transform,
     batch_size=BATCH_SIZE,
 )
 
@@ -345,6 +344,7 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
+
 early_stopping = utils.EarlyStopping(patience=3, delta=0.001)
 
 # Set up scaler for better efficiency

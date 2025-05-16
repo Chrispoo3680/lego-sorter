@@ -5,8 +5,8 @@ This is a file for training the lego object detection model.
 import torch
 from torch import nn
 from torch.utils.tensorboard.writer import SummaryWriter
-from torch.nn.parallel import DistributedDataParallel as NativeDDP
-import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+
 
 import timm.utils
 import albumentations as A
@@ -21,14 +21,13 @@ sys.path.append(str(repo_root_dir))
 
 import os
 import logging
-from tqdm import tqdm
 import argparse
 import json
 
 from src.data import download
 from src.common import utils, tools
 from src.obj_detection.preprocess import build_features
-import engine, model
+import engine, obj_detection.model.models as models
 
 from typing import Dict, List
 
@@ -228,6 +227,7 @@ if GPU_COUNT < 2:
         f"Amount of available GPUs is recommended to be two or more, but only got {GPU_COUNT}"
     )
 
+dist.init_process_group("nccl")
 RANK = dist.get_rank()
 logger.debug(f"gpu_count = {GPU_COUNT}")
 
@@ -272,7 +272,7 @@ logger.debug(f"Successfully created dataloaders.")
 # Create the object detection model
 logger.info("Loading model...")
 
-objdet_model, auto_transform = model.effdet_create_model(
+objdet_model, auto_transform = models.effdet_create_model(
     model_name=MODEL_NAME,
     num_classes=len(dataset.transformed_classes),
     device=device,
@@ -317,18 +317,18 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(
 
 # Train model with the training loop
 logger.info("Starting training...\n")
+
 early_stopping = utils.EarlyStopping(patience=5, delta=0.001)
 
 # Set up scaler for better efficiency
-torch.distributed.init_process_group(backend="nccl", world_size=GPU_COUNT, rank=RANK)
 
-objdet_model = NativeDDP(objdet_model, device_ids=[device])
+ddp_objdet_model = DDP(objdet_model, device_ids=[device])
 
 scaler = timm.utils.NativeScaler()
 
 
 results, best_state = engine.train(
-    model=objdet_model,
+    model=ddp_objdet_model,
     train_dataloader=train_dataloader,
     test_dataloader=test_dataloader,
     optimizer=optimizer,

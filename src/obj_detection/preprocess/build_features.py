@@ -1,5 +1,5 @@
 """
-Contains functionality for creating PyTorch DataLoaders for 
+Contains functionality for creating PyTorch DataLoaders for
 image classification data.
 """
 
@@ -11,11 +11,10 @@ repo_root_dir: Path = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(repo_root_dir))
 
 import torch
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split, ConcatDataset, Dataset
+from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision.datasets.folder import has_file_allowed_extension
+from torch.utils.data.distributed import DistributedSampler
 import albumentations as A
-from albumentations.pytorch.transforms import ToTensorV2
 from albumentations import cv2
 
 import xmltodict
@@ -59,8 +58,9 @@ def create_dataloaders(
         dataset=train_data,
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=True,
+        shuffle=False,
         pin_memory=True,
+        sampler=DistributedSampler(train_data),
     )
 
     test_dataloader = DataLoader(
@@ -69,6 +69,7 @@ def create_dataloaders(
         num_workers=num_workers,
         shuffle=False,
         pin_memory=True,
+        sampler=DistributedSampler(train_data),
     )
 
     return train_dataloader, test_dataloader, dataset

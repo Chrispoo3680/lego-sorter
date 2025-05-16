@@ -79,6 +79,7 @@ def test_step(
     model.eval()
 
     test_loss, test_acc = 0, 0
+
     with torch.autocast(device_type=device.type, dtype=torch.float16):
         with torch.inference_mode():
             for batch, (X, y) in enumerate(
