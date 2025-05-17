@@ -43,6 +43,7 @@ def main(
     CHECKPOINT_PATH,
     TARGET_TRANSFORM,
     IMAGE_SIZE,
+    TIMM_MODEL,
     MODEL_NAME,
     image_paths,
     class_names,
@@ -73,7 +74,7 @@ def main(
     # Create the classification model
     logger.info("Loading model...")
 
-    if args.timm_model:
+    if TIMM_MODEL:
         cnn_model, auto_transform = models.get_timm_model(
             model_name=MODEL_NAME,
             num_classes=len(class_names),
@@ -295,6 +296,7 @@ if __name__ == "__main__":
     CHECKPOINT_PATH = args.checkpoint_path
     TARGET_TRANSFORM = args.target_transform
     IMAGE_SIZE = args.image_size
+    TIMM_MODEL = args.timm_model
     MODEL_NAME = args.model_name
     MODEL_SAVE_NAME = args.model_save_name
     EXPERIMENT_NAME = args.experiment_name
@@ -423,6 +425,7 @@ if __name__ == "__main__":
         f"\n    checkpoint_path = {CHECKPOINT_PATH}"
         f"\n    target_transform = {TARGET_TRANSFORM}"
         f"\n    image_size = {IMAGE_SIZE}"
+        f"\n    timm_model = {TIMM_MODEL}"
         f"\n    model_name = {MODEL_NAME}"
         f"\n    model_save_name = {MODEL_SAVE_NAME}"
         f"\n    experiment_name = {EXPERIMENT_NAME}"
@@ -444,6 +447,7 @@ if __name__ == "__main__":
             CHECKPOINT_PATH,
             TARGET_TRANSFORM,
             IMAGE_SIZE,
+            TIMM_MODEL,
             MODEL_NAME,
             image_paths,
             class_names,
