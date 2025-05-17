@@ -1,5 +1,5 @@
 # DATA
-data_path: data/
+data_path: ../data/
 
 # CLASSIFICATION DATASETS
 b200c_dataset_url: https://www.kaggle.com/datasets/ronanpickell/b200c-lego-classification-dataset
