@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from zipfile import ZipFile
 import pandas as pd
+from contextlib import contextmanager
 
 repo_root_dir: Path = Path(__file__).parent.parent.parent
 sys.path.append(str(repo_root_dir))
@@ -119,3 +120,18 @@ def part_cat_csv_to_dict(part_to_cat_path: Union[str, Path]) -> Dict[str, int]:
 def read_file(path) -> str:
     with open(path, "r") as f:
         return f.read()
+
+
+@contextmanager
+def suppress_stderr():
+    stderr_fd = sys.stderr.fileno()
+    # Save a copy of the original stderr
+    with os.fdopen(os.dup(stderr_fd), "w") as old_stderr:
+        # Redirect stderr to /dev/null
+        with open(os.devnull, "w") as devnull:
+            os.dup2(devnull.fileno(), stderr_fd)
+        try:
+            yield
+        finally:
+            # Restore stderr
+            os.dup2(old_stderr.fileno(), stderr_fd)

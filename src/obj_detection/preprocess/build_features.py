@@ -21,7 +21,8 @@ import xmltodict
 import numpy as np
 from collections import defaultdict
 
-from src.common.tools import read_file
+from src.common.tools import read_file, suppress_stderr
+
 
 from typing import Any, List, Dict, Union, Callable, Optional, Tuple
 
@@ -340,8 +341,9 @@ class LegoObjDetDataset(Dataset):
         target_to_transformed = self.target_to_transformed
 
         img_path, target = self.samples[index]
-        image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        with suppress_stderr():
+            image = cv2.imread(img_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         bbox_array = self.get_bbox_list(target["bndboxes"], image.shape)
 
