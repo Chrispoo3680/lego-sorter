@@ -10,15 +10,15 @@ import torch.multiprocessing as mp
 from timm.utils.cuda import NativeScaler
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
-from albumentations import cv2
+import cv2
 
 import sys
 from pathlib import Path
+import os
 
 repo_root_dir: Path = Path(__file__).parent
 sys.path.append(str(repo_root_dir))
 
-import os
 import logging
 import argparse
 import json

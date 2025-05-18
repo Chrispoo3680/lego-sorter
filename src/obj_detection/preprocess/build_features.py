@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision.datasets.folder import has_file_allowed_extension
 from torch.utils.data.distributed import DistributedSampler
 import albumentations as A
-from albumentations import cv2
+import cv2
 
 import xmltodict
 import numpy as np
