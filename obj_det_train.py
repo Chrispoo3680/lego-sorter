@@ -32,6 +32,8 @@ from src.data import download
 
 from typing import Union, List, Dict
 
+torch.manual_seed(69)
+
 
 def num_to_cat(target, class_dict):
     return tools.get_part_cat(target, class_dict)
@@ -191,6 +193,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs", type=int, default=50, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
     parser.add_argument(
+        "--num_workers", type=int, default=os.cpu_count(), help="Number of CPU workers"
+    )
+    parser.add_argument(
         "--learning_rate", type=float, default=0.001, help="Learning rate"
     )
     parser.add_argument(
@@ -256,7 +261,7 @@ if __name__ == "__main__":
     # Setup hyperparameters
     NUM_EPOCHS: int = args.num_epochs
     BATCH_SIZE: int = args.batch_size
-    NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
+    NUM_WORKERS: int = 0 if os.cpu_count() is None else args.num_workers  # type: ignore
     LEARNING_RATE: float = args.learning_rate
     WEIGHT_DECAY: float = args.weight_decay
     LR_STEP_INTERVAL: int = args.lr_step_interval

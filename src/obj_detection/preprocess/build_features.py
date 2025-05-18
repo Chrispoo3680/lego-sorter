@@ -322,9 +322,17 @@ class LegoObjDetDataset(Dataset):
 
         bbox_array = self.get_bbox_list(target["bndboxes"], image.shape)
 
-        data_out = self.transform(
-            image=image, bboxes=bbox_array, labels=target["labels"]
-        )
+        # Filter out invalid boxes before applying transformation
+        valid_bboxes = []
+        valid_labels = []
+
+        for box, label in zip(bbox_array, target["labels"]):
+            x_min, y_min, x_max, y_max = box
+            if x_max > x_min and y_max > y_min:
+                valid_bboxes.append(box)
+                valid_labels.append(label)
+
+        data_out = self.transform(image=image, bboxes=valid_bboxes, labels=valid_labels)
         transformed_img = data_out["image"]
         bboxes, labels = self.get_output_tensors(data_out)
 
