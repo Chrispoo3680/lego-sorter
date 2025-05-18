@@ -22,6 +22,7 @@ import os
 import logging
 import argparse
 import json
+from functools import partial
 
 from src.common import tools, utils
 from src.obj_detection.preprocess import build_features
@@ -30,6 +31,10 @@ from src.obj_detection.model.trainer import Trainer
 from src.data import download
 
 from typing import Union, List, Dict
+
+
+def num_to_cat(target, class_dict):
+    return tools.get_part_cat(target, class_dict)
 
 
 def main(
@@ -369,11 +374,8 @@ if __name__ == "__main__":
         ),
     )
 
-    def num_to_cat(target):
-        return tools.get_part_cat(target, class_dict)
-
     if TARGET_TRANSFORM:
-        target_transform = lambda x: num_to_cat(x)
+        target_transform = partial(num_to_cat, class_dict=class_dict)
     else:
         target_transform = None
 

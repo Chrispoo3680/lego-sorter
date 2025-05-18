@@ -254,7 +254,7 @@ if __name__ == "__main__":
         default=True,
         help="If model should use pretrained weights",
     )
-    parser.add_argument("--image_size", type=int, default=256, help="Image size")
+    parser.add_argument("--image_size", type=int, default=224, help="Image size")
     parser.add_argument(
         "--checkpoint_path",
         type=str,
