@@ -25,17 +25,14 @@ from src.common.tools import read_file
 from typing import Any, List, Dict, Union, Callable, Optional, Tuple
 
 
-NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-
-
 def create_dataloaders(
     image_dir: Union[str, Path],
     annot_dir: Union[str, Path],
     transform: A.Compose,
     batch_size: int,
+    num_workers: int,
     image_size: int = 512,
     target_transform: Optional[Callable] = None,
-    num_workers: int = NUM_WORKERS,
 ):
 
     # Make data folders into dataset
@@ -69,7 +66,7 @@ def create_dataloaders(
         num_workers=num_workers,
         shuffle=False,
         pin_memory=True,
-        sampler=DistributedSampler(train_data),
+        sampler=DistributedSampler(test_data),
     )
 
     return train_dataloader, test_dataloader, dataset

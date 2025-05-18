@@ -42,6 +42,7 @@ def main(
     world_size: int,
     NUM_EPOCHS,
     BATCH_SIZE,
+    NUM_WORKERS,
     LEARNING_RATE,
     WEIGHT_DECAY,
     LR_STEP_INTERVAL,
@@ -86,10 +87,11 @@ def main(
         transform=image_transform,
         target_transform=target_transform,
         batch_size=BATCH_SIZE,
+        num_workers=NUM_WORKERS,
     )
 
     logger.info(
-        f"Successfully created dataloaders with sizes."
+        f"Successfully created dataloaders with sizes:"
         f"\n    train_dataloader: {len(train_dataloader)}"
         f"\n    test_dataloader: {len(test_dataloader)}"
         f"\n    dataset: {len(dataset)}"
@@ -231,7 +233,7 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         help="Target transform is applied",
     )
-    parser.add_argument("--image_size", type=int, default=1024, help="Image size")
+    parser.add_argument("--image_size", type=int, default=512, help="Image size")
     parser.add_argument(
         "--model_name", type=str, required=True, help="Loaded models name"
     )
@@ -254,6 +256,7 @@ if __name__ == "__main__":
     # Setup hyperparameters
     NUM_EPOCHS: int = args.num_epochs
     BATCH_SIZE: int = args.batch_size
+    NUM_WORKERS: int = 0 if os.cpu_count() is None else os.cpu_count()  # type: ignore
     LEARNING_RATE: float = args.learning_rate
     WEIGHT_DECAY: float = args.weight_decay
     LR_STEP_INTERVAL: int = args.lr_step_interval
@@ -350,6 +353,7 @@ if __name__ == "__main__":
         f"Using hyperparameters:"
         f"\n    num_epochs = {NUM_EPOCHS}"
         f"\n    batch_size = {BATCH_SIZE}"
+        f"\n    num_workers = {NUM_WORKERS}"
         f"\n    learning_rate = {LEARNING_RATE}"
         f"\n    weight_decay = {WEIGHT_DECAY}"
         f"\n    lr_step_interval = {LR_STEP_INTERVAL}"
@@ -391,6 +395,7 @@ if __name__ == "__main__":
             world_size,
             NUM_EPOCHS,
             BATCH_SIZE,
+            NUM_WORKERS,
             LEARNING_RATE,
             WEIGHT_DECAY,
             LR_STEP_INTERVAL,
