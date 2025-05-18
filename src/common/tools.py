@@ -39,6 +39,9 @@ def create_logger(
     logger = logging.getLogger(logger_name)
     logger.setLevel(level_dict[config["logging_level"]])
 
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     # Tqdm handler for terminal output
     tqdm_handler = TqdmLoggingHandler()
     tqdm_handler.setFormatter(

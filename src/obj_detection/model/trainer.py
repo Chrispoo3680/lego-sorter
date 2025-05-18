@@ -11,6 +11,7 @@ from timm.utils.metrics import AverageMeter
 from pathlib import Path
 import os
 from tqdm import tqdm
+import logging
 from collections import OrderedDict
 
 from ...common import tools, utils
@@ -24,7 +25,10 @@ try:
 except KeyError:
     logging_file_path = None
 
-logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
+if __name__ in logging.Logger.manager.loggerDict:
+    logger = logging.getLogger(__name__)
+else:
+    logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
 
 
 class Trainer:
@@ -165,7 +169,7 @@ class Trainer:
                     f"      GPU ID: {self.rank}  |  "
                     f"epoch: {epoch+1}  |  "
                     f"train_loss: {train_metrics['loss']:.4f}  |  "
-                    f"test_loss: {train_metrics['loss']:.4f}  |  "
+                    f"test_loss: {test_metrics['loss']:.4f}  |  "
                     f"learning_rate: {self.optimizer.param_groups[0]['lr']}  |  "
                     f"early stopping counter: {self.early_stopping.counter} / {self.early_stopping.patience}"
                 )

@@ -7,9 +7,6 @@ import os
 from pathlib import Path
 import sys
 
-repo_root_dir: Path = Path(__file__).parent.parent.parent.parent
-sys.path.append(str(repo_root_dir))
-
 import torch
 from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision.datasets.folder import has_file_allowed_extension
@@ -21,7 +18,7 @@ import xmltodict
 import numpy as np
 from collections import defaultdict
 
-from src.common.tools import read_file, suppress_stderr
+from ...common.tools import read_file, suppress_stderr
 
 
 from typing import Any, List, Dict, Union, Callable, Optional, Tuple

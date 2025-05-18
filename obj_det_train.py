@@ -73,7 +73,12 @@ def main(
         except KeyError:
             logging_file_path = None
 
-        logger = tools.create_logger(log_path=logging_file_path, logger_name=__name__)
+        if __name__ in logging.Logger.manager.loggerDict:
+            logger = logging.getLogger(__name__)
+        else:
+            logger = tools.create_logger(
+                log_path=logging_file_path, logger_name=__name__
+            )
 
     else:
         logger = logging.getLogger("silent_logger")
