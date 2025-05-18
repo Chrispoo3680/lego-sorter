@@ -74,7 +74,14 @@ class Trainer:
         ):
             with torch.autocast(device_type=self.device.type, dtype=torch.float16):
                 X = X.to(self.rank)
-                y = {k: [t.to(self.rank) for t in v] for k, v in y.items()}
+                y = {
+                    k: (
+                        v.to(self.rank)
+                        if torch.is_tensor(v)
+                        else [t.to(self.rank) for t in v]
+                    )
+                    for k, v in y.items()
+                }
                 output = self.model(X, y)
 
             loss = output["loss"]
@@ -109,7 +116,14 @@ class Trainer:
                     )
                 ):
                     X = X.to(self.rank)
-                    y = {k: [t.to(self.rank) for t in v] for k, v in y.items()}
+                    y = {
+                        k: (
+                            v.to(self.rank)
+                            if torch.is_tensor(v)
+                            else [t.to(self.rank) for t in v]
+                        )
+                        for k, v in y.items()
+                    }
 
                     output = self.model(X, y)
                     loss = output["loss"]
