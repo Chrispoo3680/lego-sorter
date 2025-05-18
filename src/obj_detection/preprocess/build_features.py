@@ -25,6 +25,13 @@ from src.common.tools import read_file
 from typing import Any, List, Dict, Union, Callable, Optional, Tuple
 
 
+def detection_collate_fn(batch):
+    images = [item[0] for item in batch]
+    targets = [item[1] for item in batch]
+    images = torch.stack(images, dim=0)
+    return images, targets
+
+
 def create_dataloaders(
     image_dir: Union[str, Path],
     annot_dir: Union[str, Path],
@@ -58,6 +65,7 @@ def create_dataloaders(
         shuffle=False,
         pin_memory=True,
         sampler=DistributedSampler(train_data),
+        collate_fn=detection_collate_fn,
     )
 
     test_dataloader = DataLoader(
@@ -67,6 +75,7 @@ def create_dataloaders(
         shuffle=False,
         pin_memory=True,
         sampler=DistributedSampler(test_data),
+        collate_fn=detection_collate_fn,
     )
 
     return train_dataloader, test_dataloader, dataset
