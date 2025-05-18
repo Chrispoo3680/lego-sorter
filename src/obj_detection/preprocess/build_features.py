@@ -27,16 +27,19 @@ from typing import Any, List, Dict, Union, Callable, Optional, Tuple
 
 
 def detection_collate_fn(batch):
-    images, targets = zip(*batch)
+    images = [item[0] for item in batch]
+    targets = [item[1] for item in batch]
     images = torch.stack(images, dim=0)
 
     aggregated_targets = defaultdict(list)
     for target_dict in targets:
         for key, value in target_dict.items():
-            aggregated_targets[key].append(value)
+            aggregated_targets[key].append(value.tolist())
 
     for key in aggregated_targets:
         aggregated_targets[key] = torch.tensor(aggregated_targets[key])  # type: ignore
+
+    print(dict(aggregated_targets))
 
     return images, dict(aggregated_targets)
 
@@ -340,17 +343,9 @@ class LegoObjDetDataset(Dataset):
 
         bbox_array = self.get_bbox_list(target["bndboxes"], image.shape)
 
-        # Filter out invalid boxes before applying transformation
-        valid_bboxes = []
-        valid_labels = []
-
-        for box, label in zip(bbox_array, target["labels"]):
-            x_min, y_min, x_max, y_max = box
-            if x_max > x_min and y_max > y_min:
-                valid_bboxes.append(box)
-                valid_labels.append(label)
-
-        data_out = self.transform(image=image, bboxes=valid_bboxes, labels=valid_labels)
+        data_out = self.transform(
+            image=image, bboxes=bbox_array, labels=target["labels"]
+        )
         transformed_img = data_out["image"]
         bboxes, labels = self.get_output_tensors(data_out)
 
