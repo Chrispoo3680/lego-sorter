@@ -385,7 +385,11 @@ if __name__ == "__main__":
             ToTensorV2(),
         ],  # type: ignore
         bbox_params=A.BboxParams(
-            format="pascal_voc", min_area=0, min_visibility=0, label_fields=["labels"]
+            format="pascal_voc",
+            min_area=0,
+            min_visibility=0,
+            filter_invalid_bboxes=True,
+            label_fields=["labels"],
         ),
     )
 

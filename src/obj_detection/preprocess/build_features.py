@@ -34,12 +34,10 @@ def detection_collate_fn(batch):
     aggregated_targets = defaultdict(list)
     for target_dict in targets:
         for key, value in target_dict.items():
-            aggregated_targets[key].append(value.tolist())
+            aggregated_targets[key].append(value)
 
-    for key in aggregated_targets:
-        aggregated_targets[key] = torch.tensor(aggregated_targets[key])  # type: ignore
-
-    print(dict(aggregated_targets))
+    # for key in aggregated_targets:
+    # aggregated_targets[key] = torch.tensor(aggregated_targets[key])  # type: ignore
 
     return images, dict(aggregated_targets)
 
