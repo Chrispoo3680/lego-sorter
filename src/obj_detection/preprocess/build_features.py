@@ -19,6 +19,7 @@ import cv2
 
 import xmltodict
 import numpy as np
+from collections import defaultdict
 
 from src.common.tools import read_file
 
@@ -26,10 +27,18 @@ from typing import Any, List, Dict, Union, Callable, Optional, Tuple
 
 
 def detection_collate_fn(batch):
-    images = [item[0] for item in batch]
-    targets = [item[1] for item in batch]
+    images, targets = zip(*batch)
     images = torch.stack(images, dim=0)
-    return images, targets
+
+    aggregated_targets = defaultdict(list)
+    for target_dict in targets:
+        for key, value in target_dict.items():
+            aggregated_targets[key].append(value)
+
+    for key in aggregated_targets:
+        aggregated_targets[key] = torch.tensor(aggregated_targets[key])  # type: ignore
+
+    return images, dict(aggregated_targets)
 
 
 def create_dataloaders(
