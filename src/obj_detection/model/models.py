@@ -20,7 +20,7 @@ def effdet_create_model(
     model_name: str,
     num_classes: int,
     device: torch.device,
-    bench_task: str = "",
+    bench_task: str = "train",
     pretrained_backbone: bool = True,
     image_size: int = 512,
     backbone_checkpoint_path: Union[str, Path] = "",
@@ -52,7 +52,9 @@ def effdet_create_model(
     )
 
     if backbone_checkpoint_path:
-        net.backbone.load_state_dict(torch.load(backbone_checkpoint_path), strict=False)
+        net.backbone.load_state_dict(
+            torch.load(backbone_checkpoint_path, map_location=device), strict=False
+        )
 
     if frozen_backbone:
         for param in net.backbone.parameters():

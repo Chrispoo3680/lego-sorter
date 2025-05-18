@@ -49,6 +49,7 @@ def main(
     UNFROZEN_BACKBONE_BLOCKS,
     PRETRAINED_BACKBONE,
     BACKBONE_PATH,
+    MODEL_NAME,
     image_dir,
     annot_dir,
     image_transform,
@@ -105,17 +106,17 @@ def main(
 
     frozen_blocks: List[str] = [
         str(i)
-        for i, block in enumerate(objdet_model.backbone.blocks)  # type: ignore
+        for i, block in enumerate(objdet_model.model.backbone.blocks)  # type: ignore
         if not all([parameter.requires_grad for parameter in block.parameters()])
     ]
     unfrozen_blocks: List[str] = [
         str(i)
-        for i, block in enumerate(objdet_model.backbone.blocks)  # type: ignore
+        for i, block in enumerate(objdet_model.model.backbone.blocks)  # type: ignore
         if all([parameter.requires_grad for parameter in block.parameters()])
     ]
 
     logger.info(
-        f"Successfully loaded model: {objdet_model.__class__.__name__}"
+        f"Successfully loaded model: {objdet_model.model.__class__.__name__}"
         f"\n    Frozen blocks in backbone (not trainable): {', '.join(frozen_blocks)}"
         f"\n    Unfrozen blocks in backbone (trainable): {', '.join(unfrozen_blocks)}"
     )
@@ -392,6 +393,7 @@ if __name__ == "__main__":
             UNFROZEN_BACKBONE_BLOCKS,
             PRETRAINED_BACKBONE,
             BACKBONE_PATH,
+            MODEL_NAME,
             image_dir,
             annot_dir,
             image_transform,
