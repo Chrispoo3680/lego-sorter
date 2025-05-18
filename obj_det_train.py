@@ -74,7 +74,7 @@ def main(
 
     else:
         logger = logging.getLogger("silent_logger")
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.ERROR)
         logger.addHandler(logging.NullHandler())
 
     # Create train and test dataloaders
@@ -88,7 +88,12 @@ def main(
         batch_size=BATCH_SIZE,
     )
 
-    logger.info(f"Successfully created dataloaders.")
+    logger.info(
+        f"Successfully created dataloaders with sizes."
+        f"\n    train_dataloader: {len(train_dataloader)}"
+        f"\n    test_dataloader: {len(test_dataloader)}"
+        f"\n    dataset: {len(dataset)}"
+    )
 
     # Create the object detection model
     logger.info("Loading model...")
