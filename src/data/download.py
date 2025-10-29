@@ -102,10 +102,10 @@ def api_scraper_download_data(
 
 
 if __name__ == "__main__":
-    save_path: Path = repo_root_dir / config["data_path"] / "testing"
+    save_path: Path = repo_root_dir / config["data_path"] / "classification"
 
     kaggle_download_data(
-        data_handle="zalando-research/fashionmnist",
+        data_handle=config["b200c_dataset_handle"],
         save_path=save_path,
-        data_name="fashionmnist",
+        data_name=config["b200c_dataset_name"],
     )
